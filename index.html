@@ -1,0 +1,3138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Language Dungeon — Egypt × Japan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Noto+Serif+JP:wght@500;700&family=Noto+Naskh+Arabic:wght@500;700&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0c1310;
+  --teal-deep:#0e332c;
+  --teal:#144a3f;
+  --teal-bright:#1f6e5c;
+  --gold:#c8a355;
+  --gold-bright:#e6c878;
+  --sand:#e9dcc0;
+  --papyrus:#f2e9d3;
+  --brick:#8a2f26;
+  --brick-bright:#b23f30;
+  --ink-soft:#1a221f;
+  --glass:rgba(12,19,16,0.62);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#000;font-family:'Jost',sans-serif;color:var(--papyrus);}
+#gameCanvas{position:fixed;inset:0;display:block;outline:none;}
+#vignette{
+  position:fixed;inset:0;z-index:18;pointer-events:none;
+  background:
+    radial-gradient(ellipse at center, transparent 45%, rgba(5,7,6,0.55) 100%),
+    linear-gradient(180deg, rgba(20,15,8,0.12) 0%, transparent 18%, transparent 82%, rgba(10,8,5,0.22) 100%);
+  mix-blend-mode:multiply;
+}
+
+.serif{font-family:'Cinzel',serif;}
+
+/* ---------- Loading screen ---------- */
+#loadScreen{
+  position:fixed;inset:0;z-index:100;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(230,200,120,0.10), transparent 55%),
+    linear-gradient(160deg, var(--teal-deep) 0%, #0a1a16 55%, #0b0f0d 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;
+  transition:opacity .9s ease;
+}
+#loadScreen.hidden{opacity:0;pointer-events:none;}
+.emblem{
+  width:88px;height:88px;border-radius:50%;
+  border:1px solid rgba(200,163,85,0.55);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 40px rgba(200,163,85,0.25) inset, 0 0 30px rgba(200,163,85,0.15);
+}
+.emblem svg{width:46px;height:46px;}
+#loadTitle{font-size:clamp(28px,5vw,44px);letter-spacing:2px;text-align:center;color:var(--gold-bright);text-shadow:0 0 30px rgba(230,200,120,0.35);}
+#loadSub{font-size:13px;letter-spacing:4px;text-transform:uppercase;color:var(--sand);opacity:.65;}
+#loadBarWrap{width:min(340px,70vw);height:2px;background:rgba(233,220,192,0.15);position:relative;overflow:hidden;border-radius:2px;}
+#loadBar{position:absolute;left:0;top:0;height:100%;width:0%;background:linear-gradient(90deg,var(--gold),var(--gold-bright));transition:width .25s ease;}
+#loadMsg{font-size:12px;letter-spacing:2px;opacity:.55;text-transform:uppercase;}
+
+/* ---------- Intro / start ---------- */
+#startScreen{
+  position:fixed;inset:0;z-index:90;display:none;
+  background:linear-gradient(160deg, rgba(10,20,17,.92), rgba(10,14,12,.96)), radial-gradient(circle at 70% 30%, rgba(178,63,48,0.18), transparent 45%);
+  flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:18px;padding:24px;
+}
+#startScreen.show{display:flex;}
+#startScreen h1{font-size:clamp(30px,6vw,54px);margin:0;color:var(--gold-bright);letter-spacing:1px;}
+#startScreen p{max-width:520px;color:var(--sand);opacity:.8;line-height:1.6;font-size:14px;}
+#playerNameInput{
+  width:min(340px,80vw);padding:13px 18px;border-radius:30px;text-align:center;
+  background:rgba(233,220,192,0.08);border:1px solid rgba(230,200,120,0.4);color:var(--gold-bright);
+  font-family:'Jost',sans-serif;font-size:15px;letter-spacing:.5px;outline:none;
+}
+#playerNameInput::placeholder{color:rgba(233,220,192,0.45);}
+#playerNameInput:focus{border-color:var(--gold-bright);background:rgba(233,220,192,0.13);}
+#nameWarn{color:#e07a6a;font-size:12px;letter-spacing:.5px;opacity:0;height:14px;transition:opacity .2s;}
+#nameWarn.show{opacity:1;}
+.stageBadge{
+  font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);
+  border:1px solid rgba(200,163,85,0.4);padding:8px 18px;border-radius:30px;background:rgba(200,163,85,0.07);
+}
+.btn{
+  font-family:'Cinzel',serif;letter-spacing:2px;text-transform:uppercase;font-size:14px;
+  background:linear-gradient(160deg,var(--gold-bright),var(--gold));color:#1a1206;border:none;
+  padding:14px 34px;border-radius:4px;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,0.35);
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+.btn:hover{transform:translateY(-1px);box-shadow:0 10px 26px rgba(0,0,0,0.45);}
+.btn.ghost{background:transparent;color:var(--sand);border:1px solid rgba(233,220,192,0.35);box-shadow:none;}
+.btn.small{padding:9px 18px;font-size:11px;}
+.hint-controls{display:flex;gap:22px;flex-wrap:wrap;justify-content:center;margin-top:6px;opacity:.7;font-size:11px;letter-spacing:1px;}
+.hint-controls span{border:1px solid rgba(233,220,192,0.25);padding:5px 10px;border-radius:4px;}
+
+/* ---------- HUD ---------- */
+#hud{position:fixed;inset:0;z-index:20;pointer-events:none;display:none;}
+#watermarkName{
+  position:absolute;bottom:14px;right:16px;font-family:'Cinzel',serif;font-size:6.5px;letter-spacing:1.2px;
+  color:rgba(240,207,122,0.42);text-transform:uppercase;pointer-events:none;user-select:none;
+  padding:3px 7px;border-radius:3px;background:rgba(10,14,12,0.3);border:1px solid rgba(230,200,120,0.15);
+  text-shadow:0 1px 3px rgba(0,0,0,0.6);
+}
+#ejustBadge{
+  position:absolute;bottom:16px;left:18px;font-family:'Cinzel',serif;font-size:11px;letter-spacing:2.2px;
+  color:rgba(240,207,122,0.85);border:1px solid rgba(230,200,120,0.4);padding:6px 12px;border-radius:4px;
+  background:rgba(10,14,12,0.55);pointer-events:none;user-select:none;text-shadow:0 1px 4px rgba(0,0,0,0.7);
+}
+#hud.active{display:block;}
+#topBar{
+  position:absolute;top:0;left:0;right:0;padding:16px 20px;
+  display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
+}
+#stageInfo{
+  background:var(--glass);backdrop-filter:blur(6px);border:1px solid rgba(200,163,85,0.3);
+  border-radius:8px;padding:10px 16px;pointer-events:auto;min-width:220px;
+}
+#stageInfo .num{font-size:10px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;opacity:.85;}
+#stageInfo .name{font-family:'Cinzel',serif;font-size:16px;color:var(--gold-bright);margin-top:2px;}
+#progWrap{margin-top:8px;height:4px;width:180px;background:rgba(233,220,192,0.15);border-radius:3px;overflow:hidden;}
+#progBar{height:100%;width:0%;background:linear-gradient(90deg,var(--brick-bright),var(--gold-bright));transition:width .5s ease;}
+#scoreBadge{
+  display:flex;align-items:center;gap:5px;padding:8px 14px;border-radius:20px;
+  background:rgba(20,30,26,0.55);border:1px solid rgba(230,200,120,0.35);color:var(--gold-bright);
+  font-family:'Cinzel',serif;font-size:14px;letter-spacing:1px;pointer-events:none;
+}
+#scorePop{
+  position:fixed;top:78px;right:26px;z-index:22;pointer-events:none;
+  font-family:'Cinzel',serif;font-size:20px;font-weight:700;opacity:0;
+}
+#scorePop.show{animation:scorePopAnim .9s ease forwards;}
+#scorePop.good{color:#8fe3ab;}
+#scorePop.bad{color:#e07a6a;}
+@keyframes scorePopAnim{
+  0%{opacity:0;transform:translateY(0);}
+  15%{opacity:1;transform:translateY(-6px);}
+  75%{opacity:1;transform:translateY(-26px);}
+  100%{opacity:0;transform:translateY(-38px);}
+}
+
+#hudRight{display:flex;gap:8px;pointer-events:auto;}
+.iconBtn{
+  width:42px;height:42px;border-radius:50%;background:var(--glass);border:1px solid rgba(200,163,85,0.3);
+  display:flex;align-items:center;justify-content:center;color:var(--sand);cursor:pointer;font-size:17px;
+}
+.iconBtn:active{background:rgba(200,163,85,0.25);}
+
+#crosshair{
+  position:absolute;top:50%;left:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;
+  background:rgba(242,233,211,0.85);box-shadow:0 0 6px rgba(0,0,0,0.6);
+}
+#interactPrompt{
+  position:absolute;top:58%;left:50%;transform:translateX(-50%);
+  font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-bright);
+  background:var(--glass);padding:8px 16px;border-radius:20px;border:1px solid rgba(200,163,85,0.35);
+  opacity:0;transition:opacity .2s ease;white-space:nowrap;
+}
+#interactPrompt.show{opacity:1;}
+
+#hintBox{
+  position:absolute;bottom:100px;left:50%;transform:translateX(-50%);max-width:min(460px,86vw);
+  background:var(--glass);border:1px solid rgba(200,163,85,0.35);border-radius:10px;padding:12px 18px;
+  font-size:13px;line-height:1.5;color:var(--sand);opacity:0;pointer-events:none;transition:opacity .3s ease;text-align:center;
+}
+#hintBox.show{opacity:1;}
+#hintBox .tag{color:var(--gold);font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:4px;}
+
+#toast{
+  position:absolute;top:120px;left:50%;transform:translateX(-50%) translateY(-10px);
+  font-family:'Cinzel',serif;font-size:22px;letter-spacing:2px;color:var(--gold-bright);
+  text-shadow:0 0 20px rgba(230,200,120,0.5); opacity:0;transition:all .5s ease;text-align:center;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#toast small{display:block;font-family:'Jost',sans-serif;font-size:12px;letter-spacing:1px;color:var(--sand);opacity:.75;margin-top:4px;text-transform:none;}
+
+/* ---------- Pause / settings ---------- */
+#pauseMenu{
+  position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
+  background:linear-gradient(160deg, rgba(8,16,13,.88), rgba(6,10,8,.94));
+}
+#pauseMenu.show{display:flex;}
+.panel{
+  width:min(380px,88vw);background:rgba(20,30,26,0.9);border:1px solid rgba(200,163,85,0.3);
+  border-radius:12px;padding:26px 24px;display:flex;flex-direction:column;gap:14px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.5);
+}
+.panel h2{font-family:'Cinzel',serif;color:var(--gold-bright);margin:0 0 4px;font-size:20px;letter-spacing:1px;text-align:center;}
+.row{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--sand);gap:10px;}
+input[type=range]{width:140px;accent-color:var(--gold);}
+.toggle{width:44px;height:24px;border-radius:14px;background:rgba(233,220,192,0.2);position:relative;cursor:pointer;flex-shrink:0;}
+.toggle.on{background:var(--teal-bright);}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--gold-bright);transition:left .2s ease;}
+.toggle.on::after{left:22px;}
+
+/* ---------- Puzzle modal ---------- */
+#puzzleModal{
+  position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:20px;
+  background:linear-gradient(160deg, rgba(8,16,13,.85), rgba(6,10,8,.92));
+}
+#puzzleModal.show{display:flex;}
+#puzzlePanel{
+  width:min(560px,94vw);max-height:88vh;overflow:auto;background:rgba(18,28,24,0.95);
+  border:1px solid rgba(200,163,85,0.35);border-radius:14px;padding:26px 24px 22px;
+  box-shadow:0 30px 80px rgba(0,0,0,0.55);
+}
+#puzzlePanel::-webkit-scrollbar{width:6px;}
+#puzzlePanel::-webkit-scrollbar-thumb{background:rgba(200,163,85,0.4);border-radius:4px;}
+.pTitle{font-family:'Cinzel',serif;color:var(--gold-bright);font-size:20px;text-align:center;margin-bottom:4px;letter-spacing:1px;}
+.pSub{text-align:center;font-size:12.5px;color:var(--sand);opacity:.75;margin-bottom:18px;line-height:1.5;}
+#puzzleBody{display:flex;flex-direction:column;gap:12px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.choiceCard{
+  background:rgba(233,220,192,0.06);border:1px solid rgba(233,220,192,0.18);border-radius:8px;
+  padding:12px 10px;text-align:center;cursor:pointer;font-size:14px;color:var(--sand);transition:all .15s ease;
+}
+.choiceCard:hover{border-color:var(--gold);background:rgba(200,163,85,0.12);}
+.choiceCard.selected{border-color:var(--gold-bright);background:rgba(200,163,85,0.22);color:var(--gold-bright);}
+.choiceCard.correct{border-color:#5fae7e;background:rgba(95,174,126,0.22);color:#bfe6cf;}
+.choiceCard.wrong{border-color:var(--brick-bright);background:rgba(178,63,48,0.22);color:#f2c3ba;}
+.glyph{font-size:30px;margin-bottom:6px;display:block;}
+.pFooter{display:flex;justify-content:space-between;align-items:center;margin-top:16px;gap:10px;}
+#pFeedback{font-size:12.5px;color:var(--gold-bright);min-height:16px;text-align:center;}
+.orderList{display:flex;flex-direction:column;gap:6px;}
+.orderItem{
+  display:flex;align-items:center;gap:10px;background:rgba(233,220,192,0.06);border:1px solid rgba(233,220,192,0.18);
+  border-radius:8px;padding:10px 12px;font-size:13px;
+}
+.orderItem .idx{font-family:'Cinzel',serif;color:var(--gold);width:22px;height:22px;border-radius:50%;background:rgba(200,163,85,0.18);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
+.seqTrack{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:6px 0 4px;}
+.seqDot{width:14px;height:14px;border-radius:50%;border:1px solid rgba(200,163,85,0.5);background:rgba(233,220,192,0.08);}
+.seqDot.filled{background:var(--gold-bright);}
+
+/* ---------- End screen ---------- */
+#endScreen{
+  position:fixed;inset:0;z-index:95;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;text-align:center;padding:24px;
+  background:radial-gradient(circle at 50% 40%, rgba(200,163,85,0.14), transparent 55%), linear-gradient(160deg,#0a1a16,#08100d);
+}
+#endScreen.show{display:flex;}
+#endScreen h1{font-family:'Cinzel',serif;color:var(--gold-bright);font-size:clamp(28px,5vw,46px);margin:0;}
+#endScreen p{max-width:480px;color:var(--sand);opacity:.8;font-size:14px;line-height:1.6;}
+#endTraveler{font-family:'Cinzel',serif;color:var(--gold-bright);opacity:1!important;font-size:16px;letter-spacing:1px;margin:0;}
+#endScoreBadge{
+  font-family:'Cinzel',serif;font-size:20px;letter-spacing:1px;color:var(--gold-bright);
+  border:1px solid rgba(230,200,120,0.4);padding:10px 26px;border-radius:30px;background:rgba(200,163,85,0.08);
+}
+#endButtons{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+#sendNote{font-size:11.5px;color:var(--sand);opacity:.6;max-width:420px;line-height:1.5;}
+
+/* ---------- Mobile controls ---------- */
+#mobileControls{position:fixed;inset:0;z-index:15;display:none;pointer-events:none;}
+#mobileControls.active{display:block;}
+#joyZone{position:absolute;left:0;bottom:0;width:46%;height:58%;pointer-events:auto;}
+#lookZone{position:absolute;right:0;bottom:0;width:54%;height:100%;pointer-events:auto;}
+#joyBase{
+  position:absolute;left:36px;bottom:36px;width:112px;height:112px;border-radius:50%;
+  border:2px solid rgba(233,220,192,0.4);background:rgba(20,30,26,0.4);
+  box-shadow:0 0 0 1px rgba(0,0,0,0.25) inset;transition:border-color .15s,background .15s;
+}
+#joyBase.activeTouch{border-color:rgba(230,200,120,0.8);background:rgba(20,30,26,0.55);}
+#joyStick{
+  position:absolute;width:50px;height:50px;border-radius:50%;background:rgba(200,163,85,0.6);
+  border:1px solid rgba(230,200,120,0.85);top:31px;left:31px;
+  transition:transform .02s linear;pointer-events:none;
+}
+.mbtn{
+  position:absolute;pointer-events:auto;border-radius:50%;background:rgba(20,30,26,0.55);
+  border:1px solid rgba(200,163,85,0.4);color:var(--gold-bright);display:flex;align-items:center;justify-content:center;
+  font-family:'Cinzel',serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;
+}
+#btnJump{width:64px;height:64px;right:96px;bottom:96px;}
+#btnInteract{width:78px;height:78px;right:16px;bottom:110px;}
+#btnSprint{width:56px;height:56px;right:20px;bottom:26px;font-size:10px;}
+
+@media (max-width:820px), (pointer:coarse){
+  #hint-controls-desktop{display:none;}
+}
+</style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+<div id="vignette"></div>
+
+<!-- LOADING -->
+<div id="loadScreen">
+  <div class="emblem">
+    <svg viewBox="0 0 100 100" fill="none"><path d="M50 8 L50 92 M30 30 L70 30 M38 30 C38 20 62 20 62 30 C62 40 38 40 38 50" stroke="#e6c878" stroke-width="4" stroke-linecap="round"/></svg>
+  </div>
+  <div id="loadTitle" class="serif">LANGUAGE DUNGEON</div>
+  <div id="loadSub">Egypt × Japan</div>
+  <div id="loadBarWrap"><div id="loadBar"></div></div>
+  <div id="loadMsg">Awakening the portal…</div>
+</div>
+
+<!-- START -->
+<div id="startScreen">
+  <div class="stageBadge" id="startStageBadge">Stage — </div>
+  <h1 class="serif">The Merged Sanctum</h1>
+  <p>Somewhere beneath the sand and the cedar forest, a forgotten gate fused two worlds into one. Walk its halls, read what history left behind, and let each door test what you've learned. This is not a quiz — it is a place.</p>
+  <input type="text" id="playerNameInput" placeholder="What is your name, traveler?" maxlength="30" autocomplete="off">
+  <div id="nameWarn">Please enter a name to begin.</div>
+  <button class="btn" id="btnBegin">Enter the Dungeon</button>
+  <div class="hint-controls" id="hint-controls-desktop">
+    <span>WASD — Move</span><span>Mouse — Look</span><span>Shift — Sprint</span><span>Space — Jump</span><span>E — Interact</span><span>Esc — Pause</span>
+  </div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div id="topBar">
+    <div id="stageInfo">
+      <div class="num" id="stageNum">STAGE 1 / 15</div>
+      <div class="name serif" id="stageName">The Sunlit Threshold</div>
+      <div id="progWrap"><div id="progBar"></div></div>
+    </div>
+    <div id="hudRight">
+      <div id="scoreBadge" title="Score">★ <span id="scoreVal">0</span></div>
+      <div class="iconBtn" id="btnHint" title="Hint">?</div>
+      <div class="iconBtn" id="btnSound" title="Sound">♪</div>
+      <div class="iconBtn" id="btnPause" title="Pause">❚❚</div>
+    </div>
+  </div>
+  <div id="crosshair"></div>
+  <div id="interactPrompt">Press E</div>
+  <div id="hintBox"><span class="tag">Hint</span><span id="hintText"></span></div>
+  <div id="toast"></div>
+  <div id="scorePop"></div>
+  <div id="watermarkName">Isma3il</div>
+  <div id="ejustBadge" title="EJUST — Egypt-Japan University of Science and Technology">EJUST</div>
+</div>
+
+<!-- MOBILE CONTROLS -->
+<div id="mobileControls">
+  <div id="joyZone"><div id="joyBase"><div id="joyStick"></div></div></div>
+  <div id="lookZone"></div>
+  <div class="mbtn" id="btnJump">Jump</div>
+  <div class="mbtn" id="btnInteract">Interact</div>
+  <div class="mbtn" id="btnSprint">Sprint</div>
+</div>
+
+<!-- PUZZLE MODAL -->
+<div id="puzzleModal">
+  <div id="puzzlePanel">
+    <div class="pTitle serif" id="pTitle">Puzzle</div>
+    <div class="pSub" id="pSub">Description</div>
+    <div id="puzzleBody"></div>
+    <div id="pFeedback"></div>
+    <div class="pFooter">
+      <button class="btn ghost small" id="pClose">Close</button>
+      <button class="btn small" id="pSubmit">Submit</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAUSE -->
+<div id="pauseMenu">
+  <div class="panel">
+    <h2 class="serif">Paused</h2>
+    <div class="row"><span>Sound</span><div class="toggle on" id="toggleSound"></div></div>
+    <div class="row"><span>Mouse Sensitivity</span><input type="range" id="sensSlider" min="0.4" max="2.2" step="0.1" value="1"></div>
+    <button class="btn small" id="btnResume">Resume</button>
+    <button class="btn ghost small" id="btnRestartStage">Restart Stage</button>
+    <button class="btn ghost small" id="btnRestartGame">Restart Whole Journey</button>
+  </div>
+</div>
+
+<!-- END -->
+<div id="endScreen">
+  <h1 class="serif">The Two Worlds Are One</h1>
+  <p id="endTraveler">Traveler —</p>
+  <p>You've walked every hall of the Merged Sanctum, from the Nile's threshold to the shrine beyond the bamboo. The portal dims, at rest, until the next visitor arrives.</p>
+  <div id="endScoreBadge">Final Score: <span id="endScoreVal">0</span></div>
+  <div id="endButtons">
+    <button class="btn" id="btnPlayAgain">Begin a New Journey</button>
+    <button class="btn ghost" id="btnSendScore">Send My Score</button>
+  </div>
+  <div id="sendNote"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+// ==== utils.js ====
+// ============================================================================
+// utils.js — shared namespace, math helpers, procedural texture/glyph drawing
+// ============================================================================
+var DG = window.DG || {};
+window.DG = DG;
+
+DG.util = (function () {
+
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // Axis-aligned box collider {minX,maxX,minZ,maxZ,minY,maxY}
+  function boxFrom(cx, cz, w, d, cy, h) {
+    return { minX: cx - w / 2, maxX: cx + w / 2, minZ: cz - d / 2, maxZ: cz + d / 2, minY: cy, maxY: cy + h };
+  }
+  function circleIntersectsBox(px, pz, r, box) {
+    const cx = clamp(px, box.minX, box.maxX);
+    const cz = clamp(pz, box.minZ, box.maxZ);
+    const dx = px - cx, dz = pz - cz;
+    return (dx * dx + dz * dz) < r * r;
+  }
+
+  // ---- Canvas texture factory ----
+  function makeCanvas(w, h) {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    return c;
+  }
+  function textureFromCanvas(canvas, repeatX, repeatY) {
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    if (repeatX || repeatY) tex.repeat.set(repeatX || 1, repeatY || 1);
+    tex.anisotropy = 4;
+    return tex;
+  }
+
+  // Sandstone / plaster wall texture with subtle noise + optional carved panel
+  function wallTexture(baseColor, veinColor, seed) {
+    const c = makeCanvas(256, 256);
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = baseColor;
+    ctx.fillRect(0, 0, 256, 256);
+    let s = seed || 1;
+    function rnd() { s = (s * 9301 + 49297) % 233280; return s / 233280; }
+    ctx.globalAlpha = 0.12;
+    for (let i = 0; i < 900; i++) {
+      ctx.fillStyle = rnd() > 0.5 ? '#000000' : '#ffffff';
+      const x = rnd() * 256, y = rnd() * 256, sz = rnd() * 2.4;
+      ctx.fillRect(x, y, sz, sz);
+    }
+    ctx.globalAlpha = 0.18;
+    ctx.strokeStyle = veinColor;
+    for (let i = 0; i < 5; i++) {
+      ctx.beginPath();
+      ctx.moveTo(rnd() * 256, 0);
+      ctx.bezierCurveTo(rnd() * 256, rnd() * 256, rnd() * 256, rnd() * 256, rnd() * 256, 256);
+      ctx.lineWidth = rnd() * 2 + 0.5;
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    return c;
+  }
+
+  function floorTexture(baseColor, jointColor, tiles) {
+    const c = makeCanvas(256, 256);
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = baseColor;
+    ctx.fillRect(0, 0, 256, 256);
+    ctx.strokeStyle = jointColor;
+    ctx.globalAlpha = 0.5;
+    ctx.lineWidth = 2;
+    const n = tiles || 4;
+    const step = 256 / n;
+    for (let i = 0; i <= n; i++) {
+      ctx.beginPath(); ctx.moveTo(i * step, 0); ctx.lineTo(i * step, 256); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i * step); ctx.lineTo(256, i * step); ctx.stroke();
+    }
+    ctx.globalAlpha = 0.06;
+    for (let i = 0; i < 400; i++) {
+      ctx.fillStyle = Math.random() > 0.5 ? '#000' : '#fff';
+      ctx.fillRect(Math.random() * 256, Math.random() * 256, 1.5, 1.5);
+    }
+    return c;
+  }
+
+  // ---- Hieroglyph-style icons — filled gradient shapes with a carved-relief
+  // shadow + highlight pass, instead of thin flat single-stroke line art.
+  const GLYPH_DRAW = {
+    ankh: (ctx, s) => {
+      ctx.beginPath(); ctx.arc(0, -s * 0.32, s * 0.19, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -s * 0.1); ctx.lineTo(0, s * 0.4); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-s * 0.24, s * 0.02); ctx.lineTo(s * 0.24, s * 0.02); ctx.stroke();
+    },
+    eye: (ctx, s) => {
+      ctx.beginPath(); ctx.moveTo(-s * 0.4, 0); ctx.quadraticCurveTo(0, -s * 0.28, s * 0.4, 0);
+      ctx.quadraticCurveTo(0, s * 0.22, -s * 0.4, 0); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, 0, s * 0.1, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0.05 * s, s * 0.1); ctx.lineTo(-s * 0.05, s * 0.42); ctx.stroke();
+    },
+    sun: (ctx, s) => {
+      ctx.beginPath(); ctx.arc(0, 0, s * 0.22, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      for (let i = 0; i < 8; i++) {
+        const a = i / 8 * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(a) * s * 0.3, Math.sin(a) * s * 0.3);
+        ctx.lineTo(Math.cos(a) * s * 0.46, Math.sin(a) * s * 0.46);
+        ctx.stroke();
+      }
+    },
+    wave: (ctx, s) => {
+      ctx.beginPath();
+      for (let i = -2; i <= 2; i++) {
+        ctx.moveTo(i * s * 0.2 - s * 0.1, 0);
+        ctx.quadraticCurveTo(i * s * 0.2, -s * 0.16, i * s * 0.2 + s * 0.1, 0);
+      }
+      ctx.stroke();
+    },
+    scarab: (ctx, s) => {
+      ctx.beginPath(); ctx.ellipse(0, 0, s * 0.3, s * 0.22, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -s * 0.22); ctx.lineTo(0, s * 0.22); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-s * 0.3, -s * 0.05); ctx.lineTo(-s * 0.44, -s * 0.3); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(s * 0.3, -s * 0.05); ctx.lineTo(s * 0.44, -s * 0.3); ctx.stroke();
+    },
+    feather: (ctx, s) => {
+      ctx.beginPath(); ctx.moveTo(0, -s * 0.44); ctx.lineTo(0, s * 0.44); ctx.stroke();
+      for (let i = -4; i <= 4; i++) {
+        ctx.beginPath(); ctx.moveTo(0, i * s * 0.09); ctx.lineTo(i > 0 ? s * 0.22 : -s * 0.22, i * s * 0.09 - s * 0.05); ctx.stroke();
+      }
+    },
+    pyramid: (ctx, s) => {
+      ctx.beginPath(); ctx.moveTo(0, -s * 0.4); ctx.lineTo(s * 0.42, s * 0.32); ctx.lineTo(-s * 0.42, s * 0.32); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -s * 0.4); ctx.lineTo(0, s * 0.32); ctx.stroke();
+    },
+    serpent: (ctx, s) => {
+      ctx.beginPath();
+      ctx.moveTo(-s * 0.4, -s * 0.2);
+      ctx.quadraticCurveTo(-s * 0.1, -s * 0.4, s * 0.1, -s * 0.1);
+      ctx.quadraticCurveTo(s * 0.3, s * 0.15, s * 0.05, s * 0.3);
+      ctx.quadraticCurveTo(-s * 0.1, s * 0.4, -s * 0.2, s * 0.2);
+      ctx.stroke();
+    },
+    lotus: (ctx, s) => {
+      for (let i = -1; i <= 1; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * s * 0.02, s * 0.34);
+        ctx.quadraticCurveTo(i * s * 0.32 + i * 0.02, -s * 0.1, i * s * 0.06, -s * 0.4);
+        ctx.stroke();
+      }
+    },
+    wing: (ctx, s) => {
+      ctx.beginPath();
+      ctx.moveTo(-s * 0.42, s * 0.1);
+      for (let i = 0; i < 5; i++) {
+        ctx.lineTo(-s * 0.42 + i * s * 0.21, -s * 0.3 + (i % 2) * s * 0.18);
+      }
+      ctx.stroke();
+    }
+  };
+  const GLYPH_KEYS = Object.keys(GLYPH_DRAW);
+
+  function glyphTexture(key, fg, bg) {
+    const size = 220;
+    const c = makeCanvas(size, size);
+    const ctx = c.getContext('2d');
+    if (bg) { ctx.fillStyle = bg; ctx.fillRect(0, 0, size, size); }
+    ctx.save();
+    ctx.translate(size / 2, size / 2);
+
+    const base = fg || '#e6c878';
+    // gold gradient fill — brighter upper-left, deeper lower-right, reads as a
+    // carved metallic relief rather than a flat single-tone icon
+    const grad = ctx.createLinearGradient(-size * 0.35, -size * 0.35, size * 0.35, size * 0.35);
+    grad.addColorStop(0, lighten(base, 0.35));
+    grad.addColorStop(0.5, base);
+    grad.addColorStop(1, darken(base, 0.35));
+
+    // pass 1: soft drop shadow for carved depth
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.55)';
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetX = 3;
+    ctx.shadowOffsetY = 4;
+    ctx.fillStyle = grad;
+    ctx.strokeStyle = darken(base, 0.55);
+    ctx.lineWidth = 11;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    (GLYPH_DRAW[key] || GLYPH_DRAW.sun)(ctx, 150);
+    ctx.restore();
+
+    // pass 2: thin bright highlight stroke on top for a beveled-edge look
+    ctx.strokeStyle = lighten(base, 0.55);
+    ctx.globalAlpha = 0.45;
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    (GLYPH_DRAW[key] || GLYPH_DRAW.sun)(ctx, 150);
+    ctx.globalAlpha = 1;
+
+    ctx.restore();
+    return c;
+  }
+  function lighten(hex, amt) { return shade(hex, amt); }
+  function darken(hex, amt) { return shade(hex, -amt); }
+  function shade(hex, amt) {
+    const c = new THREE.Color(hex);
+    const h = {}; c.getHSL(h);
+    const l = Math.max(0, Math.min(1, h.l + amt));
+    const out = new THREE.Color(); out.setHSL(h.h, h.s, l);
+    return '#' + out.getHexString();
+  }
+
+  function kanaTexture(char, fg, bg) {
+    const c = makeCanvas(160, 160);
+    const ctx = c.getContext('2d');
+    if (bg) { ctx.fillStyle = bg; ctx.fillRect(0, 0, 160, 160); }
+    ctx.fillStyle = fg || '#f2e9d3';
+    ctx.font = "96px 'Noto Serif JP', serif";
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(char, 80, 88);
+    return c;
+  }
+
+  function labelTexture(text, sub, w, h, opts) {
+    opts = opts || {};
+    const c = makeCanvas(w, h);
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = opts.bg || 'rgba(20,30,26,0.0)';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = opts.fg || '#e6c878';
+    ctx.textAlign = 'center';
+    ctx.font = `${opts.size || 40}px 'Cinzel', serif`;
+    ctx.fillText(text, w / 2, h / 2 + (sub ? -8 : 8));
+    if (sub) {
+      ctx.font = `${opts.subSize || 22}px 'Jost', sans-serif`;
+      ctx.fillStyle = opts.subFg || '#e9dcc0';
+      ctx.fillText(sub, w / 2, h / 2 + 30);
+    }
+    return c;
+  }
+
+  return {
+    clamp, lerp, rand, pick, shuffle, boxFrom, circleIntersectsBox,
+    makeCanvas, textureFromCanvas, wallTexture, floorTexture,
+    glyphTexture, GLYPH_KEYS, kanaTexture, labelTexture
+  };
+})();
+
+</script>
+
+<script>
+// ==== audio.js ====
+// ============================================================================
+// audio.js — fully procedural WebAudio sound design (no external audio files)
+// ============================================================================
+DG.Audio = class {
+  constructor() {
+    this.ctx = null;
+    this.master = null;
+    this.muted = false;
+    this.droneNodes = [];
+    this._stepToggle = 0;
+  }
+
+  ensure() {
+    if (this.ctx) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    this.ctx = new AC();
+    this.master = this.ctx.createGain();
+    this.master.gain.value = 0.55;
+    this.master.connect(this.ctx.destination);
+  }
+
+  setMuted(m) {
+    this.muted = m;
+    if (this.master) this.master.gain.value = m ? 0 : 0.55;
+  }
+
+  resume() { if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume(); }
+
+  // --- Ambient bed per culture: soft filtered noise "wind" + slow detuned pad ---
+  setAmbient(culture) {
+    this.ensure();
+    this.droneNodes.forEach(n => { try { n.stop && n.stop(); n.disconnect && n.disconnect(); } catch (e) {} });
+    this.droneNodes = [];
+    const ctx = this.ctx;
+    const bed = ctx.createGain();
+    bed.gain.value = 0.16;
+    bed.connect(this.master);
+
+    // filtered noise wind
+    const bufferSize = 2 * ctx.sampleRate;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer; noise.loop = true;
+    const filt = ctx.createBiquadFilter();
+    filt.type = 'bandpass';
+    filt.frequency.value = culture === 'japan' ? 900 : 500;
+    filt.Q.value = 0.6;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.value = 0.5;
+    noise.connect(filt); filt.connect(noiseGain); noiseGain.connect(bed);
+    noise.start();
+
+    // slow pad, two detuned oscillators
+    const baseFreq = culture === 'japan' ? 110 : 98;
+    [0, 7].forEach((semi, i) => {
+      const o = ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = baseFreq * Math.pow(2, semi / 12);
+      const g = ctx.createGain();
+      g.gain.value = 0.06;
+      o.connect(g); g.connect(bed);
+      o.start();
+      this.droneNodes.push(o);
+    });
+    this.droneNodes.push(noise, bed);
+  }
+
+  _tone(freq, dur, type, vol, when, sweepTo) {
+    this.ensure();
+    const ctx = this.ctx;
+    const t0 = ctx.currentTime + (when || 0);
+    const o = ctx.createOscillator();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, t0);
+    if (sweepTo) o.frequency.exponentialRampToValueAtTime(sweepTo, t0 + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol || 0.3, t0 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(this.master);
+    o.start(t0); o.stop(t0 + dur + 0.05);
+  }
+
+  footstep() {
+    this.ensure();
+    this._stepToggle = 1 - this._stepToggle;
+    const ctx = this.ctx;
+    const t0 = ctx.currentTime;
+    const bufferSize = ctx.sampleRate * 0.08;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    const filt = ctx.createBiquadFilter();
+    filt.type = 'lowpass';
+    filt.frequency.value = this._stepToggle ? 500 : 420;
+    const g = ctx.createGain();
+    g.gain.value = 0.18;
+    src.connect(filt); filt.connect(g); g.connect(this.master);
+    src.start(t0);
+  }
+
+  doorOpen() {
+    this.ensure();
+    const ctx = this.ctx;
+    const t0 = ctx.currentTime;
+    // low stone rumble, pitch dropping as the doors slide open
+    this._tone(75, 1.3, 'sawtooth', 0.13, 0, 42);
+    this._tone(55, 1.5, 'triangle', 0.1, 0.05, 30);
+    // gritty grinding texture underneath
+    const bufferSize = ctx.sampleRate * 1.1;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize) * 0.6;
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    const filt = ctx.createBiquadFilter();
+    filt.type = 'lowpass'; filt.frequency.value = 320;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.16, t0);
+    g.gain.linearRampToValueAtTime(0.0001, t0 + 1.1);
+    src.connect(filt); filt.connect(g); g.connect(this.master);
+    src.start(t0);
+    // bright resolving chime once the doors settle open
+    [660, 880].forEach((f, i) => this._tone(f, 0.5, 'sine', 0.12, 0.9 + i * 0.1));
+  }
+
+  select() { this._tone(520, 0.09, 'sine', 0.15); }
+  wrong() { this._tone(180, 0.28, 'square', 0.14, 0, 110); }
+
+  success(culture) {
+    const notes = culture === 'japan' ? [523.25, 659.25, 783.99, 987.77] : [440, 554.37, 659.25, 880];
+    notes.forEach((f, i) => this._tone(f, 0.55, 'sine', 0.16, i * 0.09));
+  }
+
+  celebrate() {
+    const notes = [392, 523.25, 659.25, 783.99, 1046.5];
+    notes.forEach((f, i) => this._tone(f, 0.7, 'triangle', 0.14, i * 0.06));
+  }
+
+  leverClunk() { this._tone(120, 0.18, 'square', 0.16, 0, 60); }
+  plate() { this._tone(300, 0.12, 'sine', 0.14, 0, 240); }
+  jump() { this._tone(340, 0.14, 'square', 0.12, 0, 460); }
+};
+
+</script>
+
+<script>
+// ==== stages.js ====
+// ============================================================================
+// stages.js — pure DATA: 15 stages, environment params + puzzle content.
+// Each stage now also carries a `figure` — a real Egyptian or Japanese
+// deity/historical figure the room is themed around (a statue + lore plaque
+// are built from this in world.js). No engine logic lives here.
+// ============================================================================
+DG.STAGES = [
+
+  { id: 1, culture: 'egypt', title: 'Antechamber of Tutankhamun',
+    room: { w: 14, d: 22, h: 7 },
+    palette: { floor: '#c9a25f', wall: '#b8874c', vein: '#8a6231', accent: '#e6c878', fog: '#7a5a30' },
+    decor: ['column', 'obelisk', 'hieroglyphWall', 'lotus'],
+    lightWarm: true,
+    figure: { name: 'Tutankhamun', culture: 'egypt', epithet: 'The Boy King',
+      blurb: 'Crowned pharaoh at around nine years old, Tutankhamun restored the old gods after his father\u2019s religious upheaval. His nearly intact tomb, discovered in 1922, remains the richest royal burial ever found.' },
+    puzzle: {
+      type: 'hieroglyph_decode', title: 'Read the Stone', difficulty: 1,
+      prompt: 'A single carving glows on the lintel. What does it mean?',
+      hint: 'This word is carved above every offering table in the temple.',
+      rounds: [ { glyph: 'ankh', answer: 'Eternal Life', options: ['Eternal Life', 'The River Flood', 'A Sacred Beetle'] } ]
+    } },
+
+  { id: 2, culture: 'japan', title: 'Shrine Path of Inari',
+    room: { w: 12, d: 24, h: 6.5 },
+    palette: { floor: '#3c2c22', wall: '#5b4433', vein: '#2a1f18', accent: '#c8564a', fog: '#1c2b26' },
+    decor: ['bamboo', 'lantern', 'toriiSmall', 'zenRock'],
+    lightWarm: false,
+    figure: { name: 'Inari', culture: 'japan', epithet: 'Kami of Rice, Fox, and Prosperity',
+      blurb: 'Inari\u2019s shrines are marked by thousands of vermillion torii gates, donated by grateful worshippers, and guarded by stone foxes said to be Inari\u2019s messengers.' },
+    puzzle: {
+      type: 'hiragana_match', title: 'First Characters', difficulty: 1,
+      prompt: 'Match each hiragana word to its meaning.',
+      hint: 'Sound each character out slowly — み is "mi", ず is "zu".',
+      rounds: [
+        { kana: 'みず', answer: 'ماء — Water', options: ['ماء — Water', 'جبل — Mountain', 'نار — Fire'] },
+        { kana: 'やま', answer: 'جبل — Mountain', options: ['جبل — Mountain', 'ماء — Water', 'شجرة — Tree'] },
+        { kana: 'ひ', answer: 'نار — Fire', options: ['نار — Fire', 'قمر — Moon', 'ماء — Water'] }
+      ]
+    } },
+
+  { id: 3, culture: 'egypt', title: 'Hall of Ra',
+    room: { w: 16, d: 22, h: 8 },
+    palette: { floor: '#caa869', wall: '#a97a3e', vein: '#6f4d27', accent: '#e6c878', fog: '#6b4c26' },
+    decor: ['column', 'sphinx', 'obelisk'],
+    lightWarm: true,
+    figure: { name: 'Ra', culture: 'egypt', epithet: 'The Sun God',
+      blurb: 'Each day Ra sails across the sky in his solar barge, and each night he journeys through the underworld to be reborn at dawn. He was worshipped as the father of the gods and king of Egypt\u2019s pantheon.' },
+    puzzle: {
+      type: 'lever_sequence', title: 'Levers of the Flood', difficulty: 2,
+      prompt: 'Three stone levers guard the gate. Pull them in the order the Nile rises: low water, flood, harvest.',
+      hint: 'Low water first, then the flood, then the harvest.',
+      order: [0, 1, 2], labels: ['Low Water', 'The Flood', 'The Harvest']
+    } },
+
+  { id: 4, culture: 'japan', title: 'Garden of Susanoo',
+    room: { w: 16, d: 22, h: 6.5 },
+    palette: { floor: '#33403a', wall: '#4a5c50', vein: '#22302a', accent: '#8fb8a6', fog: '#1a2422' },
+    decor: ['zenRock', 'lantern', 'cherryBlossom', 'bamboo'],
+    lightWarm: false,
+    figure: { name: 'Susanoo', culture: 'japan', epithet: 'God of Storms and Sea',
+      blurb: 'Impulsive brother of Amaterasu, Susanoo was banished from heaven for his rages — yet redeemed himself by slaying the eight-headed serpent Yamata no Orochi. Here, his storm has settled into stillness.' },
+    puzzle: {
+      type: 'pressure_plates', title: 'Stones of the Koi Pond', difficulty: 2,
+      prompt: 'Step on the stone plates in the order shown, largest ripple to smallest.',
+      hint: 'Step on plate 1 first, then 2, then 3, then 4 — left to right.',
+      order: [0, 1, 2, 3]
+    } },
+
+  { id: 5, culture: 'fusion', title: 'Sanctuary of Isis',
+    room: { w: 14, d: 20, h: 7 },
+    palette: { floor: '#b99a6a', wall: '#4a5c50', vein: '#2a1f18', accent: '#e6c878', fog: '#33301f' },
+    decor: ['column', 'lantern', 'hieroglyphWall'],
+    lightWarm: true,
+    figure: { name: 'Isis', culture: 'egypt', epithet: 'Goddess of Magic and Motherhood',
+      blurb: 'Isis was the most powerful magician among the gods — she reassembled the body of her murdered husband Osiris and used her spells to protect their son Horus. Her seals are said to bind and unbind fate itself.' },
+    puzzle: {
+      type: 'symbol_rotation', title: 'The Twin Seals', difficulty: 2,
+      prompt: 'Rotate each seal until it matches the target symbol shown above it.',
+      hint: 'A faded reference sits above each seal — rotate your seal to match its angle exactly.',
+      seals: [ { glyph: 'lotus', targetSteps: 3 }, { glyph: 'scarab', targetSteps: 1 } ]
+    } },
+
+  { id: 6, culture: 'japan', title: 'Gate of Hachiman',
+    room: { w: 12, d: 22, h: 6.5 },
+    palette: { floor: '#3c2c22', wall: '#802e26', vein: '#4a1a15', accent: '#f0c95c', fog: '#241512' },
+    decor: ['toriiSmall', 'lantern', 'cherryBlossom'],
+    lightWarm: false,
+    figure: { name: 'Hachiman', culture: 'japan', epithet: 'Kami of War and Protection',
+      blurb: 'Guardian of gates and warriors, Hachiman is honored at more shrines across Japan than almost any other kami, each marked by a torii gate like the one traveled here.' },
+    puzzle: {
+      type: 'translation_greeting', title: 'Words at the Gate', difficulty: 2,
+      prompt: 'A traveler bows and speaks. Choose the correct meaning.',
+      hint: 'こんにちは is used in the middle of the day.',
+      rounds: [
+        { phrase: 'こんにちは', answer: 'مرحباً — Hello', options: ['مرحباً — Hello', 'مع السلامة — Goodbye', 'شكراً — Thank you'] },
+        { phrase: 'ありがとう', answer: 'شكراً — Thank you', options: ['من فضلك — Please', 'شكراً — Thank you', 'عذراً — Excuse me'] }
+      ]
+    } },
+
+  { id: 7, culture: 'egypt', title: 'Vault of Thoth',
+    room: { w: 14, d: 20, h: 7.5 },
+    palette: { floor: '#c9a25f', wall: '#8a6231', vein: '#54391c', accent: '#e6c878', fog: '#4a3216' },
+    decor: ['column', 'hieroglyphWall', 'obelisk'],
+    lightWarm: true,
+    figure: { name: 'Thoth', culture: 'egypt', epithet: 'God of Writing and Wisdom',
+      blurb: 'Depicted with the head of an ibis, Thoth was credited with inventing hieroglyphic writing itself, and served as the scribe and record-keeper of the gods.' },
+    puzzle: {
+      type: 'memory_sequence', title: 'The Priest\'s Echo', difficulty: 3,
+      prompt: 'Pull the lever beside the runes to begin. Watch the sequence, then repeat it exactly.',
+      hint: 'Press E on the lever once — if you make a mistake, the sequence replays on its own.',
+      glyphs: ['ankh', 'eye', 'sun', 'feather'], length: 4
+    } },
+
+  { id: 8, culture: 'egypt', title: 'Procession of Osiris',
+    room: { w: 16, d: 22, h: 7.5 },
+    palette: { floor: '#caa869', wall: '#a97a3e', vein: '#6f4d27', accent: '#e6c878', fog: '#5c3f20' },
+    decor: ['sphinx', 'column', 'obelisk'],
+    lightWarm: true,
+    figure: { name: 'Osiris', culture: 'egypt', epithet: 'Lord of the Afterlife',
+      blurb: 'The first pharaoh ever mummified, Osiris died and was resurrected by Isis\u2019s magic, becoming ruler of the underworld and judge of every soul that follows the funeral procession into the west.' },
+    puzzle: {
+      type: 'object_ordering', title: 'The Order of Ritual', difficulty: 3,
+      prompt: 'Arrange the stages of a royal burial in the correct historical order.',
+      hint: 'Mummification happens before the tomb is sealed — think of it step by step.',
+      items: [
+        { id: 'a', label: 'Mummification of the body' },
+        { id: 'b', label: 'Procession to the tomb' },
+        { id: 'c', label: 'Opening of the Mouth ceremony' },
+        { id: 'd', label: 'Sealing of the burial chamber' }
+      ],
+      correctOrder: ['a', 'b', 'c', 'd']
+    } },
+
+  { id: 9, culture: 'japan', title: 'Court of Tsukuyomi',
+    room: { w: 14, d: 20, h: 6.5 },
+    palette: { floor: '#33403a', wall: '#5b4433', vein: '#2a1f18', accent: '#c8564a', fog: '#1c2b26' },
+    decor: ['lantern', 'bamboo', 'zenRock', 'cherryBlossom'],
+    lightWarm: false,
+    figure: { name: 'Tsukuyomi', culture: 'japan', epithet: 'God of the Moon',
+      blurb: 'Quiet and distant, Tsukuyomi is the brother of Amaterasu the sun and Susanoo the storm. An ancient quarrel between the two siblings is said to be why day and night never meet.' },
+    puzzle: {
+      type: 'pattern_match', title: 'The Lantern Mosaic', difficulty: 3,
+      prompt: 'Toggle the tiles until the lit pattern matches the target shown above.',
+      hint: 'Each tile you click also flips its direct neighbors — plan a few moves ahead.',
+      size: 3, target: [1, 0, 1, 0, 1, 0, 1, 0, 1]
+    } },
+
+  { id: 10, culture: 'egypt', title: 'Tomb of Anubis',
+    room: { w: 16, d: 24, h: 7.5 },
+    palette: { floor: '#c9a25f', wall: '#8a6231', vein: '#54391c', accent: '#e6c878', fog: '#4a3216' },
+    decor: ['column', 'obelisk', 'sphinx', 'hieroglyphWall'],
+    lightWarm: true,
+    figure: { name: 'Anubis', culture: 'egypt', epithet: 'Guardian of the Dead',
+      blurb: 'Jackal-headed Anubis guides souls into the afterlife and weighs each heart against the feather of Ma\u2019at. Small guardian figures called ushabti were buried with the dead to serve them beyond the grave.' },
+    puzzle: {
+      type: 'hidden_object_search', title: 'The Buried Figure', difficulty: 3,
+      prompt: 'A small guardian figure is hidden somewhere in this hall. Find it and press E.',
+      hint: 'Look low, near the bases of the columns — a faint gold glow gives it away.'
+    } },
+
+  { id: 11, culture: 'fusion', title: 'Riddle of Hapi',
+    room: { w: 14, d: 20, h: 7 },
+    palette: { floor: '#b99a6a', wall: '#4a5c50', vein: '#2a1f18', accent: '#8fb8a6', fog: '#2a2818' },
+    decor: ['column', 'bamboo', 'zenRock'],
+    lightWarm: true,
+    figure: { name: 'Hapi', culture: 'egypt', epithet: 'God of the Nile Flood',
+      blurb: 'Depicted with a swollen belly and papyrus-crowned head, Hapi personified the annual Nile flood that carried the black silt Egyptians relied on for every harvest.' },
+    puzzle: {
+      type: 'cultural_riddle', title: 'The Two Rivers', difficulty: 4,
+      prompt: '"I flood once a year and feed the black soil of a desert kingdom. What am I?"',
+      hint: 'The ancient Egyptians called their land "Kemet," the black land, because of me.',
+      options: ['The Nile River', 'The Kamo River', 'The Red Sea'],
+      answer: 'The Nile River'
+    } },
+
+  { id: 12, culture: 'egypt', title: 'Archive of Seshat',
+    room: { w: 16, d: 22, h: 7.5 },
+    palette: { floor: '#caa869', wall: '#8a6231', vein: '#54391c', accent: '#e6c878', fog: '#3d2a14' },
+    decor: ['column', 'obelisk', 'hieroglyphWall', 'sphinx'],
+    lightWarm: true,
+    figure: { name: 'Seshat', culture: 'egypt', epithet: 'Goddess of Writing and Records',
+      blurb: 'Seshat kept the royal archives, measured the founding of temples, and recorded the years of a pharaoh\u2019s reign — patron of scribes and of every sealed door that guards knowledge.' },
+    puzzle: {
+      type: 'door_clue_search', title: 'The Archivist\'s Code', difficulty: 4,
+      prompt: 'Three tablets are hidden around this hall, each bearing one digit. Find them, then enter the three-digit code in order.',
+      hint: 'Walk close to a glowing tablet and press E to read its digit.',
+      digits: [3, 7, 1]
+    } },
+
+  { id: 13, culture: 'japan', title: 'Hall of Amaterasu',
+    room: { w: 14, d: 22, h: 7 },
+    palette: { floor: '#33403a', wall: '#4a5c50', vein: '#22302a', accent: '#f0c95c', fog: '#141c18' },
+    decor: ['lantern', 'zenRock', 'bamboo'],
+    lightWarm: false,
+    figure: { name: 'Amaterasu', culture: 'japan', epithet: 'Sun Goddess',
+      blurb: 'Chief deity of the Shinto pantheon, Amaterasu once hid in a cave, plunging the world into darkness — until her own reflection in a sacred mirror, the Yata no Kagami, drew her back out into the light.' },
+    puzzle: {
+      type: 'light_reflection', title: 'The Sunlit Path', difficulty: 3,
+      prompt: 'Press E on a mirror to flip its angle. Watch the beam of light live, and guide it to the golden receiver.',
+      hint: 'The beam is always visible — follow it to see exactly which mirror needs flipping.'
+    } },
+
+  { id: 14, culture: 'fusion', title: 'Sky of Horus, Where Nile Meets Kamo',
+    room: { w: 16, d: 22, h: 7.5 },
+    palette: { floor: '#b99a6a', wall: '#6c5a3e', vein: '#3a2f1c', accent: '#e6c878', fog: '#2c2414' },
+    decor: ['column', 'toriiSmall', 'lotus', 'lantern'],
+    lightWarm: true,
+    figure: { name: 'Horus', culture: 'egypt', epithet: 'The Sky God',
+      blurb: 'Falcon-headed son of Isis and Osiris, Horus embodies kingship itself — every living pharaoh was said to rule as his earthly incarnation.' },
+    puzzle: {
+      type: 'mixed_logic', title: 'The Merged Teaching', difficulty: 5,
+      prompt: 'Two lessons become one. First, name the meaning of the hieroglyph. Then, name the meaning of the hiragana.',
+      hint: 'The eye protects; みず means ماء (water).',
+      stepA: { glyph: 'eye', answer: 'The Eye', options: ['The Eye', 'The Flame', 'The Wing'] },
+      stepB: { kana: 'みず', answer: 'ماء — Water', options: ['ماء — Water', 'قمر — Moon', 'شجرة — Tree'] }
+    } },
+
+  { id: 15, culture: 'fusion', title: 'Convergence of Ra and Amaterasu',
+    room: { w: 18, d: 26, h: 9 },
+    palette: { floor: '#c9a25f', wall: '#4a5c50', vein: '#2a1f18', accent: '#e6c878', fog: '#171b16' },
+    decor: ['column', 'toriiSmall', 'obelisk', 'lantern', 'sphinx', 'cherryBlossom'],
+    lightWarm: true,
+    figure: { name: 'Ra & Amaterasu', culture: 'fusion', epithet: 'Twin Suns of Two Worlds',
+      blurb: 'Ra sails the sky over the Nile; Amaterasu illuminates the islands of Japan. Two suns, two names, one light — the final threshold where the dungeon\u2019s two worlds fully converge.' },
+    puzzle: {
+      type: 'symbol_activation_sequence', title: 'The Final Convergence', difficulty: 5,
+      prompt: 'Six runes ring the sanctum — half Egyptian, half Japanese in spirit. Pull the lever to begin, then activate them in the order the portal shows you.',
+      hint: 'Press the lever once. The sequence is longer now — watch fully before touching anything.',
+      glyphs: ['ankh', 'sun', 'wave', 'scarab', 'lotus', 'serpent'], length: 6
+    } }
+];
+
+DG.STAGE_COUNT = DG.STAGES.length;
+
+</script>
+
+<script>
+// ==== world.js ====
+// ============================================================================
+// world.js — environment construction: rooms, decorations, lighting, doors.
+// Pure "scene builder": takes stage DATA (stages.js) and produces meshes +
+// collision boxes + named anchors that puzzles.js hooks logic onto.
+// ============================================================================
+DG.World = (function () {
+  const U = DG.util;
+
+  // Shared geometries (created once, reused across instances)
+  const GEO = {
+    colCyl: new THREE.CylinderGeometry(0.55, 0.65, 1, 12),
+    colCap: new THREE.CylinderGeometry(0.75, 0.75, 0.28, 12),
+    obelisk: new THREE.CylinderGeometry(0.18, 0.4, 1, 4),
+    obeliskTip: new THREE.ConeGeometry(0.42, 0.5, 4),
+    bamboo: new THREE.CylinderGeometry(0.08, 0.1, 1, 8),
+    lanternBase: new THREE.BoxGeometry(0.5, 0.5, 0.5),
+    lanternTop: new THREE.ConeGeometry(0.4, 0.35, 4),
+    rockLow: new THREE.DodecahedronGeometry(0.5, 0),
+    plane: new THREE.PlaneGeometry(1, 1),
+    sphere: new THREE.SphereGeometry(1, 10, 8)
+  };
+
+  function mat(color, opts) {
+    opts = opts || {};
+    return new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.85, metalness: 0.08 }, opts));
+  }
+
+  function column(x, z, h, accent) {
+    const g = new THREE.Group();
+    const shaft = new THREE.Mesh(GEO.colCyl, mat('#d8c39a', { roughness: 0.9 }));
+    shaft.scale.set(1, h, 1); shaft.position.y = h / 2;
+    shaft.castShadow = true; shaft.receiveShadow = true;
+    const cap = new THREE.Mesh(GEO.colCap, mat(accent, { roughness: 0.5, metalness: 0.3 }));
+    cap.position.y = h;
+    const base = new THREE.Mesh(GEO.colCap, mat('#8a6231'));
+    base.position.y = 0.12; base.scale.set(1.05, 1, 1.05);
+    g.add(shaft, cap, base);
+    g.position.set(x, 0, z);
+    return { group: g, collider: U.boxFrom(x, z, 1.1, 1.1, 0, h + 0.4) };
+  }
+
+  function obelisk(x, z, h, accent) {
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(GEO.obelisk, mat('#c9a25f'));
+    body.scale.set(1, h, 1); body.position.y = h / 2; body.rotation.y = Math.PI / 4;
+    body.castShadow = true;
+    const tip = new THREE.Mesh(GEO.obeliskTip, mat(accent, { emissive: accent, emissiveIntensity: 0.25, metalness: 0.4, roughness: 0.35 }));
+    tip.position.y = h + 0.22; tip.rotation.y = Math.PI / 4;
+    g.add(body, tip);
+    g.position.set(x, 0, z);
+    return { group: g, collider: U.boxFrom(x, z, 0.7, 0.7, 0, h + 0.6) };
+  }
+
+  function hieroglyphWall(x, z, ry, w, h) {
+    const g = new THREE.Group();
+    const keys = U.shuffle(U.GLYPH_KEYS).slice(0, 4);
+    keys.forEach((k, i) => {
+      const tex = U.textureFromCanvas(U.glyphTexture(k, '#4a3016', null));
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.7),
+        new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.9 }));
+      m.position.set(0, 1.4 + i * 1.05, 0.02);
+      g.add(m);
+    });
+    g.position.set(x, 0, z); g.rotation.y = ry;
+    return g;
+  }
+
+  function lotus(x, z) {
+    const g = new THREE.Group();
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.1, 6), mat('#4c6b3a'));
+    stem.position.y = 0.55;
+    const bloom = new THREE.Mesh(GEO.sphere, mat('#e6c8d8', { roughness: 0.6 }));
+    bloom.scale.set(0.22, 0.16, 0.22); bloom.position.y = 1.1;
+    g.add(stem, bloom); g.position.set(x, 0, z);
+    return { group: g, collider: null };
+  }
+
+  function bambooCluster(x, z) {
+    const g = new THREE.Group();
+    const n = 5;
+    for (let i = 0; i < n; i++) {
+      const h = U.rand(2.4, 3.4);
+      const c = new THREE.Mesh(GEO.bamboo, mat('#4f7a4a', { roughness: 0.6 }));
+      c.scale.set(1, h, 1); c.position.set(U.rand(-0.3, 0.3), h / 2, U.rand(-0.3, 0.3));
+      c.castShadow = true;
+      g.add(c);
+    }
+    g.position.set(x, 0, z);
+    return { group: g, collider: U.boxFrom(x, z, 0.9, 0.9, 0, 2.6) };
+  }
+
+  function lantern(x, z, accent, glow) {
+    const g = new THREE.Group();
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 1.2, 8), mat('#2a231c'));
+    post.position.y = 0.6;
+    const base = new THREE.Mesh(GEO.lanternBase, mat('#5c534a'));
+    base.scale.set(0.7, 0.3, 0.7); base.position.y = 1.25;
+    const top = new THREE.Mesh(GEO.lanternTop, mat('#5c534a'));
+    top.position.y = 1.65;
+    const light = new THREE.PointLight(accent, glow ? 1.2 : 0.5, 6, 2);
+    light.position.y = 1.25;
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), new THREE.MeshBasicMaterial({ color: accent }));
+    bulb.position.y = 1.25;
+    const halo = glowSprite(accent, glow ? 1.1 : 0.7, glow ? 0.55 : 0.35);
+    halo.position.y = 1.25;
+    g.add(post, base, top, light, bulb, halo);
+    g.position.set(x, 0, z);
+    return { group: g, collider: U.boxFrom(x, z, 0.5, 0.5, 0, 1.7) };
+  }
+
+  function toriiSmall(x, z, accent) {
+    const g = new THREE.Group();
+    const postMat = mat(accent, { roughness: 0.55 });
+    [-0.9, 0.9].forEach(dx => {
+      const p = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.15, 2.6, 10), postMat);
+      p.position.set(dx, 1.3, 0); p.castShadow = true;
+      g.add(p);
+    });
+    const lintel = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.18, 0.22), postMat);
+    lintel.position.y = 2.55; g.add(lintel);
+    const lintel2 = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.14, 0.18), mat('#241512'));
+    lintel2.position.y = 2.3; g.add(lintel2);
+    g.position.set(x, 0, z);
+    return { group: g, collider: null };
+  }
+
+  function zenRock(x, z) {
+    const g = new THREE.Group();
+    const r = new THREE.Mesh(GEO.rockLow, mat('#555f58', { roughness: 1 }));
+    r.scale.set(U.rand(0.5, 0.9), U.rand(0.35, 0.6), U.rand(0.5, 0.9));
+    r.rotation.set(U.rand(0, 1), U.rand(0, 3), U.rand(0, 1));
+    r.position.y = r.scale.y * 0.4;
+    r.castShadow = true;
+    g.add(r); g.position.set(x, 0, z);
+    return { group: g, collider: U.boxFrom(x, z, 1.1, 1.1, 0, 0.7) };
+  }
+
+  function cherryBlossom(x, z) {
+    const g = new THREE.Group();
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.2, 2.2, 8), mat('#3a2a22'));
+    trunk.position.y = 1.1; trunk.castShadow = true;
+    g.add(trunk);
+    for (let i = 0; i < 5; i++) {
+      const s = new THREE.Mesh(GEO.sphere, mat('#e8b9c9', { roughness: 0.7 }));
+      s.scale.setScalar(U.rand(0.5, 0.8));
+      s.position.set(U.rand(-0.7, 0.7), 2.2 + U.rand(-0.2, 0.4), U.rand(-0.7, 0.7));
+      g.add(s);
+    }
+    g.position.set(x, 0, z);
+    return { group: g, collider: U.boxFrom(x, z, 0.7, 0.7, 0, 2.2) };
+  }
+
+  function sphinx(x, z, ry) {
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.9, 3.4), mat('#c9a568', { roughness: 0.85 }));
+    body.position.y = 0.55; body.castShadow = true;
+    const chest = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.1, 0.9), mat('#c9a568'));
+    chest.position.set(0, 0.95, 1.5);
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.7), mat('#b8874c'));
+    head.position.set(0, 1.65, 1.55);
+    const crown = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.3, 0.78), mat('#e6c878', { metalness: 0.3, roughness: 0.4 }));
+    crown.position.set(0, 2.0, 1.5);
+    g.add(body, chest, head, crown);
+    g.position.set(x, 0, z); g.rotation.y = ry || 0;
+    return { group: g, collider: U.boxFrom(x, z, 2.2, 3.6, 0, 2.1) };
+  }
+
+  // A small radial-glow sprite used as a soft backing light behind floating relics
+  function glowSprite(color, size, opacity) {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const ctx = c.getContext('2d');
+    const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    const col = new THREE.Color(color);
+    const rgb = `${Math.round(col.r * 255)},${Math.round(col.g * 255)},${Math.round(col.b * 255)}`;
+    g.addColorStop(0, `rgba(${rgb},${opacity})`);
+    g.addColorStop(1, `rgba(${rgb},0)`);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, 128, 128);
+    const tex = new THREE.CanvasTexture(c);
+    const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+    spr.scale.set(size, size, 1);
+    return spr;
+  }
+
+  const KANJI_SET = ['夢', '花', '龍', '月', '桜', '風', '和', '静', '光', '道', '雪', '愛', '空', '心', '炎'];
+
+  // A floating relic: slim plinth on the floor, a slowly tumbling glowing ring in the air,
+  // and a double-sided glowing disc at its center — an Egyptian icon on one side of every
+  // room, a Japanese character on the other, so the concept reads identically stage to stage.
+  function floatingRelic(x, z, side, accent) {
+    const g = new THREE.Group();
+    const floatY = 1.85;
+
+    const plinth = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 0.9, 10), mat('#6b5636', { roughness: 0.8 }));
+    plinth.position.y = 0.45; plinth.castShadow = true; plinth.receiveShadow = true;
+    const plinthCap = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.3, 0.1, 10), mat(accent, { roughness: 0.4, metalness: 0.4, emissive: accent, emissiveIntensity: 0.2 }));
+    plinthCap.position.y = 0.93;
+    g.add(plinth, plinthCap);
+
+    const ringGeo = new THREE.TorusGeometry(0.42, 0.03, 10, 32);
+    const ringMat = new THREE.MeshStandardMaterial({ color: accent, emissive: accent, emissiveIntensity: 1.1, roughness: 0.3, metalness: 0.5 });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.position.y = floatY;
+    ring.rotation.x = Math.PI / 2.3;
+    g.add(ring);
+
+    let discTex;
+    if (side === 'egypt') {
+      const key = U.pick(U.GLYPH_KEYS);
+      discTex = U.textureFromCanvas(U.glyphTexture(key, '#2a1a0c', null));
+    } else {
+      const ch = U.pick(KANJI_SET);
+      discTex = U.textureFromCanvas(U.kanaTexture(ch, '#0c1a16', null));
+    }
+    const discMat = new THREE.MeshStandardMaterial({
+      map: discTex, transparent: true, side: THREE.DoubleSide,
+      color: accent, emissive: accent, emissiveIntensity: 0.55, roughness: 0.45, metalness: 0.15
+    });
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(0.3, 24), discMat);
+    disc.position.y = floatY;
+    g.add(disc);
+
+    const backGlow = glowSprite(accent, 1.5, 0.5);
+    backGlow.position.y = floatY;
+    g.add(backGlow);
+
+    const light = new THREE.PointLight(accent, 1.3, 5, 2);
+    light.position.y = floatY;
+    g.add(light);
+
+    g.position.set(x, 0, z);
+    return {
+      group: g,
+      collider: U.boxFrom(x, z, 0.7, 0.7, 0, 1.0),
+      floater: { ring, disc, baseY: floatY, t: Math.random() * 10 }
+    };
+  }
+
+  // ---- Per-figure visual identity: distinguishing accessory + color per name,
+  // so Isis doesn't look like Osiris and Amaterasu doesn't look like Inari.
+  const FIGURE_VISUALS = {
+    'Tutankhamun': { tint: '#d8c39a', accent2: '#1f3a6b', accessory: 'nemesStriped' },
+    'Ra':          { tint: '#e0c9a0', accent2: '#e6c878', accessory: 'sunDisc' },
+    'Isis':        { tint: '#e3cfae', accent2: '#c8564a', accessory: 'throneCrown' },
+    'Thoth':       { tint: '#cbb98f', accent2: '#8fb8a6', accessory: 'ibisHead' },
+    'Osiris':      { tint: '#6f8f6a', accent2: '#e6c878', accessory: 'atefCrown' },
+    'Anubis':      { tint: '#2a2622', accent2: '#e6c878', accessory: 'jackalHead' },
+    'Hapi':        { tint: '#7a8f6a', accent2: '#8fb8a6', accessory: 'papyrusCrown' },
+    'Seshat':      { tint: '#d8c39a', accent2: '#c8564a', accessory: 'starCrown' },
+    'Horus':       { tint: '#c9a568', accent2: '#2f5c8a', accessory: 'falconHead' },
+    'Amaterasu':   { tint: '#e8d8b0', accent2: '#f0c95c', accessory: 'mirror' },
+    'Inari':       { tint: '#e0cba0', accent2: '#c8564a', accessory: 'foxCompanion' },
+    'Susanoo':     { tint: '#8a8fa0', accent2: '#3a5c6a', accessory: 'stormBlade' },
+    'Tsukuyomi':   { tint: '#c9ccd8', accent2: '#8fa8c8', accessory: 'moonCrescent' },
+    'Hachiman':    { tint: '#c9a568', accent2: '#802e26', accessory: 'warBow' }
+  };
+  function figureVisual(name) { return FIGURE_VISUALS[name] || { tint: '#d8c39a', accent2: '#e6c878', accessory: '' }; }
+
+  // ---- Central figure statue: the room's namesake deity/pharaoh, stylized ----
+  function egyptStatue(accent, visual) {
+    const g = new THREE.Group();
+    const skin = visual.tint;
+    const legs = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.6, 0.6), mat(skin, { roughness: 0.7 }));
+    legs.position.y = 0.8;
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.5, 0.7), mat(visual.accessory === 'jackalHead' ? '#3a332c' : '#d8c39a', { roughness: 0.7 }));
+    torso.position.y = 2.35;
+    const armL = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.24, 0.24), mat(accent, { metalness: 0.5, roughness: 0.3, emissive: accent, emissiveIntensity: 0.15 }));
+    armL.position.set(-0.15, 2.75, 0.5); armL.rotation.z = 0.15;
+    const armR = armL.clone(); armR.position.x = 0.15; armR.rotation.z = -0.15;
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.7, 0.66), mat(skin));
+    head.position.y = 3.5;
+    const beard = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.14, 0.5, 6), mat(accent, { metalness: 0.4, roughness: 0.3 }));
+    beard.position.set(0, 3.05, 0.32); beard.rotation.x = 0.25;
+    const base = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.5, 1.4), mat('#8a6231'));
+    base.position.y = 0.25;
+    g.add(legs, torso, armL, armR, head, beard, base);
+
+    // headdress/accessory — this is what actually differentiates each figure
+    switch (visual.accessory) {
+      case 'nemesStriped': {
+        const nemes = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.62, 1.0, 8), mat(accent, { metalness: 0.35, roughness: 0.4, emissive: accent, emissiveIntensity: 0.2 }));
+        nemes.position.y = 3.65; g.add(nemes);
+        const stripe = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.03, 6, 16), mat(visual.accent2, { emissive: visual.accent2, emissiveIntensity: 0.5 }));
+        stripe.rotation.x = Math.PI / 2; stripe.position.y = 3.4; g.add(stripe);
+        break;
+      }
+      case 'sunDisc': {
+        const disc = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.08, 10, 24), mat(accent, { emissive: accent, emissiveIntensity: 1.6, metalness: 0.5, roughness: 0.2 }));
+        disc.position.y = 4.05; g.add(disc);
+        const cobra = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.35, 8), mat(visual.accent2, { emissive: visual.accent2, emissiveIntensity: 0.4 }));
+        cobra.position.set(0, 3.75, 0.34); cobra.rotation.x = -0.3; g.add(cobra);
+        break;
+      }
+      case 'throneCrown': {
+        const seat = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.5, 0.12), mat(accent, { metalness: 0.4, roughness: 0.3, emissive: accent, emissiveIntensity: 0.3 }));
+        seat.position.y = 3.95; g.add(seat);
+        const wingL = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.14, 0.35), mat(visual.accent2, { emissive: visual.accent2, emissiveIntensity: 0.35 }));
+        wingL.position.set(-0.55, 2.9, 0.42); wingL.rotation.z = 0.3; wingL.rotation.y = 0.4;
+        const wingR = wingL.clone(); wingR.position.x = 0.55; wingR.rotation.z = -0.3; wingR.rotation.y = -0.4;
+        g.add(wingL, wingR);
+        break;
+      }
+      case 'ibisHead': {
+        head.scale.set(0.85, 0.85, 0.85);
+        const beak = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.05, 0.55, 6), mat('#232323', { roughness: 0.5 }));
+        beak.position.set(0, 3.4, 0.5); beak.rotation.x = Math.PI / 2.3; g.add(beak);
+        break;
+      }
+      case 'atefCrown': {
+        const cone = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.85, 8), mat(visual.accent2, { emissive: visual.accent2, emissiveIntensity: 0.35 }));
+        cone.position.y = 4.0; g.add(cone);
+        [-0.28, 0.28].forEach(dx => {
+          const plume = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.6, 6), mat(accent, { emissive: accent, emissiveIntensity: 0.4 }));
+          plume.position.set(dx, 3.85, 0); plume.rotation.z = dx > 0 ? -0.2 : 0.2; g.add(plume);
+        });
+        break;
+      }
+      case 'jackalHead': {
+        head.material = mat('#1c1a17', { roughness: 0.6 });
+        const snout = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.5, 6), mat('#1c1a17', { roughness: 0.6 }));
+        snout.position.set(0, 3.4, 0.5); snout.rotation.x = Math.PI / 2.2; g.add(snout);
+        [-0.16, 0.16].forEach(dx => {
+          const ear = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.32, 5), mat('#1c1a17'));
+          ear.position.set(dx, 3.9, 0); ear.rotation.z = dx > 0 ? -0.25 : 0.25; g.add(ear);
+        });
+        break;
+      }
+      case 'papyrusCrown': {
+        for (let i = -1; i <= 1; i++) {
+          const reed = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.6, 6), mat(visual.accent2, { emissive: visual.accent2, emissiveIntensity: 0.3 }));
+          reed.position.set(i * 0.18, 3.95, 0); g.add(reed);
+        }
+        break;
+      }
+      case 'starCrown': {
+        for (let i = 0; i < 5; i++) {
+          const a = (i / 5) * Math.PI * 2;
+          const spike = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.3, 5), mat(visual.accent2, { emissive: visual.accent2, emissiveIntensity: 0.5 }));
+          spike.position.set(Math.cos(a) * 0.22, 3.85, Math.sin(a) * 0.22); g.add(spike);
+        }
+        break;
+      }
+      case 'falconHead': {
+        head.material = mat('#5a4326', { roughness: 0.6 });
+        const beak = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.28, 6), mat('#e6c878', { emissive: '#e6c878', emissiveIntensity: 0.3 }));
+        beak.position.set(0, 3.42, 0.42); beak.rotation.x = Math.PI / 2.2; g.add(beak);
+        break;
+      }
+      default: {
+        const nemes = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.62, 1.0, 8), mat(accent, { metalness: 0.35, roughness: 0.4, emissive: accent, emissiveIntensity: 0.2 }));
+        nemes.position.y = 3.65; g.add(nemes);
+      }
+    }
+    g.traverse(o => { o.castShadow = true; o.receiveShadow = true; });
+    return g;
+  }
+  function japanStatue(accent, visual) {
+    const g = new THREE.Group();
+    const robeGeo = new THREE.CylinderGeometry(0.95, 1.15, 2.6, 10);
+    const robe = new THREE.Mesh(robeGeo, mat(visual.tint, { roughness: 0.8 }));
+    robe.position.y = 1.6;
+    const sash = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.09, 8, 20), mat(accent, { emissive: accent, emissiveIntensity: 0.3, metalness: 0.4, roughness: 0.35 }));
+    sash.rotation.x = Math.PI / 2; sash.position.y = 2.0;
+    const sleeveL = new THREE.Mesh(new THREE.ConeGeometry(0.55, 1.3, 8), mat(visual.tint, { roughness: 0.8 }));
+    sleeveL.position.set(-1.0, 2.3, 0); sleeveL.rotation.z = 0.5;
+    const sleeveR = sleeveL.clone(); sleeveR.position.x = 1.0; sleeveR.rotation.z = -0.5;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.42, 12, 10), mat('#e8d4b0'));
+    head.position.y = 3.2;
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.3, 0.45, 12), mat('#5c534a'));
+    base.position.y = 0.22;
+    g.add(robe, sash, sleeveL, sleeveR, head, base);
+
+    switch (visual.accessory) {
+      case 'mirror': {
+        const disc = new THREE.Mesh(new THREE.CircleGeometry(0.4, 24), mat(accent, { emissive: accent, emissiveIntensity: 1.3, metalness: 0.8, roughness: 0.1 }));
+        disc.position.set(0, 2.5, 0.75); g.add(disc);
+        const halo = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.045, 8, 28), mat(accent, { emissive: accent, emissiveIntensity: 1.2, metalness: 0.6, roughness: 0.2 }));
+        halo.position.set(0, 3.25, -0.1); g.add(halo);
+        break;
+      }
+      case 'foxCompanion': {
+        const foxBody = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.7, 8), mat('#c8564a', { roughness: 0.6 }));
+        foxBody.position.set(0.95, 0.6, 0.5); foxBody.rotation.x = Math.PI; g.add(foxBody);
+        const foxHead = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.3, 6), mat('#c8564a'));
+        foxHead.position.set(0.95, 1.0, 0.65); foxHead.rotation.x = Math.PI / 2.4; g.add(foxHead);
+        const crown = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.4, 8), mat(accent, { emissive: accent, emissiveIntensity: 0.4 }));
+        crown.position.y = 3.65; g.add(crown);
+        break;
+      }
+      case 'stormBlade': {
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.3, 0.02), mat('#dfe9e4', { metalness: 0.8, roughness: 0.2, emissive: accent, emissiveIntensity: 0.2 }));
+        blade.position.set(0.85, 2.4, 0.2); blade.rotation.z = -0.35; g.add(blade);
+        const crown = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.4, 8), mat(accent, { emissive: accent, emissiveIntensity: 0.4 }));
+        crown.position.y = 3.65; g.add(crown);
+        break;
+      }
+      case 'moonCrescent': {
+        const cres = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.05, 8, 20, Math.PI * 1.3), mat(accent, { emissive: accent, emissiveIntensity: 1.0, metalness: 0.4 }));
+        cres.position.set(0, 3.3, -0.1); cres.rotation.z = 0.6; g.add(cres);
+        break;
+      }
+      case 'warBow': {
+        const bow = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.03, 6, 16, Math.PI), mat('#5c3a24', { roughness: 0.6 }));
+        bow.position.set(0.9, 2.2, 0.3); bow.rotation.y = Math.PI / 2; g.add(bow);
+        const crown = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.4, 8), mat(accent, { emissive: accent, emissiveIntensity: 0.4 }));
+        crown.position.y = 3.65; g.add(crown);
+        break;
+      }
+      default: {
+        const crown = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.4, 8), mat(accent, { emissive: accent, emissiveIntensity: 0.4, metalness: 0.5, roughness: 0.3 }));
+        crown.position.y = 3.65; g.add(crown);
+      }
+    }
+    g.traverse(o => { o.castShadow = true; o.receiveShadow = true; });
+    return g;
+  }
+  function centralStatue(figure, x, z, accent) {
+    const g = new THREE.Group();
+    const dais = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.9, 0.35, 16), mat('#3a2f1c', { roughness: 0.85 }));
+    dais.position.y = 0.175; dais.receiveShadow = true;
+    g.add(dais);
+    const names = figure.name.split(' & ');
+    const visual = figureVisual(names[0]);
+    const statue = (figure.culture === 'japan') ? japanStatue(accent, visual) : egyptStatue(accent, visual);
+    statue.position.y = 0.35;
+    g.add(statue);
+    // the finale room honors two figures — a smaller twin statue alongside
+    if (names[1]) {
+      const visual2 = figureVisual(names[1]);
+      const statue2 = japanStatue(accent, visual2);
+      statue2.position.set(1.6, 0.35, -0.3);
+      statue2.scale.setScalar(0.72);
+      g.add(statue2);
+      statue.position.x = -1.6;
+      statue.scale.setScalar(0.72);
+    }
+    [-1.4, 1.4].forEach(dx => {
+      const l = new THREE.PointLight(accent, 1.0, 7, 2);
+      l.position.set(dx, 0.6, 0.6);
+      g.add(l);
+    });
+    const rim = new THREE.PointLight(accent, 0.8, 8, 2);
+    rim.position.set(0, 4.2, -0.6);
+    g.add(rim);
+    g.position.set(x, 0, z);
+    return { group: g, collider: U.boxFrom(x, z, 2.4, 1.8, 0, 4.2) };
+  }
+
+  // ---- Lore plaque: "Press E" info panel about the room's namesake figure ----
+  function lorePlaque(x, z, accent) {
+    const g = new THREE.Group();
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.13, 1.0, 8), mat('#5c4a30'));
+    post.position.y = 0.5;
+    const face = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.7, 0.1), mat('#2a231c', { emissive: accent, emissiveIntensity: 0.15 }));
+    face.position.y = 1.15;
+    const scrollTex = U.textureFromCanvas(U.labelTexture('i', null, 160, 160, { size: 90, fg: '#e6c878' }));
+    const icon = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 0.32), new THREE.MeshStandardMaterial({ map: scrollTex, transparent: true, emissive: accent, emissiveIntensity: 0.4 }));
+    icon.position.set(0, 1.15, 0.06);
+    g.add(post, face, icon);
+    const light = new THREE.PointLight(accent, 0.9, 3, 2);
+    light.position.y = 1.2; g.add(light);
+    g.position.set(x, 0, z);
+    return { group: g, collider: U.boxFrom(x, z, 0.6, 0.6, 0, 1.5) };
+  }
+
+  function canopicJar(x, z, accent) {
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.15, 0.42, 10), mat('#e4d3a1', { roughness: 0.85 }));
+    body.position.y = 0.21;
+    const lid = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 8, 0, Math.PI * 2, 0, Math.PI / 2), mat(accent, { emissive: accent, emissiveIntensity: 0.15, roughness: 0.5 }));
+    lid.position.y = 0.42;
+    g.add(body, lid); g.traverse(o => { o.castShadow = true; o.receiveShadow = true; });
+    g.position.set(x, 0, z);
+    return { group: g, collider: U.boxFrom(x, z, 0.5, 0.5, 0, 0.6) };
+  }
+  function offeringTable(x, z, accent) {
+    const g = new THREE.Group();
+    const top = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.06, 0.5), mat('#8a6231', { roughness: 0.8 }));
+    top.position.y = 0.55;
+    [[-0.38, -0.2], [0.38, -0.2], [-0.38, 0.2], [0.38, 0.2]].forEach(([lx, lz]) => {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.55, 6), mat('#5c4326'));
+      leg.position.set(lx, 0.275, lz); g.add(leg);
+    });
+    const bowl = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), mat(accent, { emissive: accent, emissiveIntensity: 0.2, roughness: 0.6 }));
+    bowl.position.y = 0.62;
+    g.add(top, bowl); g.traverse(o => { o.castShadow = true; o.receiveShadow = true; });
+    g.position.set(x, 0, z);
+    return { group: g, collider: U.boxFrom(x, z, 1.0, 0.6, 0, 0.7) };
+  }
+  function brazier(x, z, accent) {
+    const g = new THREE.Group();
+    const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.14, 0.3, 10), mat('#3a332c', { roughness: 0.7 }));
+    bowl.position.y = 0.7;
+    const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.1, 0.7, 8), mat('#3a332c'));
+    stand.position.y = 0.35;
+    const flame = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.3, 8), mat(accent, { emissive: accent, emissiveIntensity: 1.8 }));
+    flame.position.y = 0.95;
+    const halo = glowSprite(accent, 1.3, 0.6);
+    halo.position.y = 0.95;
+    const light = new THREE.PointLight(accent, 1.1, 4.5, 2);
+    light.position.y = 0.95;
+    g.add(bowl, stand, flame, halo, light); g.traverse(o => { if (o.isMesh) { o.castShadow = true; } });
+    g.position.set(x, 0, z);
+    return { group: g, collider: U.boxFrom(x, z, 0.5, 0.5, 0, 1.1) };
+  }
+  function mossPatch(x, z) {
+    const g = new THREE.Group();
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(U.rand(0.7, 1.3), 16), mat('#3f5c3a', { roughness: 1 }));
+    disc.rotation.x = -Math.PI / 2; disc.position.y = 0.015;
+    g.add(disc); g.position.set(x, 0, z);
+    return { group: g, collider: null };
+  }
+  function lowFence(x, z, accent, ry) {
+    const g = new THREE.Group();
+    for (let i = -1; i <= 1; i++) {
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.5, 6), mat('#4a3624'));
+      post.position.set(i * 0.4, 0.25, 0); g.add(post);
+    }
+    const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.9, 6), mat('#4a3624'));
+    rail.rotation.z = Math.PI / 2; rail.position.y = 0.4; g.add(rail);
+    g.traverse(o => o.castShadow = true);
+    g.position.set(x, 0, z); g.rotation.y = ry || 0;
+    return { group: g, collider: null };
+  }
+
+  function signatureCartouche(x, z, ry, accent) {
+    const g = new THREE.Group();
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.045, 10, 40), mat(accent, { metalness: 0.5, roughness: 0.3, emissive: accent, emissiveIntensity: 0.18 }));
+    ring.scale.set(2.05, 1, 1); // classic wide horizontal cartouche oval
+    const endBar = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.34, 10), mat(accent, { metalness: 0.5, roughness: 0.3, emissive: accent, emissiveIntensity: 0.18 }));
+    endBar.rotation.z = Math.PI / 2; endBar.position.x = 0.63;
+    const nameTex = U.textureFromCanvas(U.labelTexture('Isma3il', null, 480, 160, { size: 34, fg: '#f4e9c8' }));
+    const nameplane = new THREE.Mesh(new THREE.PlaneGeometry(1.05, 0.35), new THREE.MeshStandardMaterial({ map: nameTex, transparent: true, opacity: 0.75, emissive: accent, emissiveIntensity: 0.08 }));
+    nameplane.position.z = 0.03;
+    g.add(ring, endBar, nameplane);
+    g.scale.setScalar(0.5); // ~50% smaller per request
+    g.position.set(x, 1.55, z); g.rotation.y = ry;
+    return { group: g, collider: null };
+  }
+
+  const BUILDERS = {
+    column: (x, z, accent) => column(x, z, U.rand(3.6, 4.4), accent),
+    obelisk: (x, z, accent) => obelisk(x, z, U.rand(3.2, 4.2), accent),
+    lotus: (x, z) => lotus(x, z),
+    bamboo: (x, z) => bambooCluster(x, z),
+    lantern: (x, z, accent) => lantern(x, z, accent, Math.random() > 0.5),
+    toriiSmall: (x, z, accent) => toriiSmall(x, z, accent),
+    zenRock: (x, z) => zenRock(x, z),
+    cherryBlossom: (x, z) => cherryBlossom(x, z),
+    sphinx: (x, z, accent, ry) => sphinx(x, z, ry)
+  };
+
+  // ---- Ground-level clutter so rooms don't read as empty boxes: Egypt rooms
+  // get funerary furnishings, Japan rooms get moss/garden ground-cover.
+  function scatterClutter(stage, room, group, colliders) {
+    const accent = stage.palette.accent;
+    const n = 6;
+    for (let i = 0; i < n; i++) {
+      const x = U.rand(-room.w / 2 + 1.6, room.w / 2 - 1.6);
+      const z = U.rand(-room.d / 2 + 4.5, room.d / 2 - 7);
+      let res = null;
+      if (stage.culture === 'japan') {
+        res = Math.random() < 0.6 ? mossPatch(x, z) : lowFence(x, z, accent, U.rand(0, Math.PI));
+      } else if (stage.culture === 'egypt') {
+        const roll = Math.random();
+        res = roll < 0.4 ? canopicJar(x, z, accent) : roll < 0.75 ? brazier(x, z, accent) : offeringTable(x, z, accent);
+      } else {
+        res = Math.random() < 0.5 ? mossPatch(x, z) : canopicJar(x, z, accent);
+      }
+      if (res) {
+        group.add(res.group);
+        if (res.collider) colliders.push(res.collider);
+      }
+    }
+  }
+
+  // ---- dust particles ----
+  function makeDust(scene, room, color) {
+    const n = 140;
+    const geo = new THREE.BufferGeometry();
+    const pos = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      pos[i * 3] = U.rand(-room.w / 2, room.w / 2);
+      pos[i * 3 + 1] = U.rand(0.2, room.h - 0.5);
+      pos[i * 3 + 2] = U.rand(-room.d / 2, room.d / 2);
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const m = new THREE.PointsMaterial({ color: color || '#e6c878', size: 0.03, transparent: true, opacity: 0.5 });
+    const pts = new THREE.Points(geo, m);
+    scene.add(pts);
+    return { points: pts, geo, speed: U.rand(0.05, 0.12) };
+  }
+
+  function buildStage(scene, stage) {
+    // cleanup previous
+    while (scene.children.length) scene.remove(scene.children[0]);
+
+    const P = stage.palette;
+    const room = stage.room;
+    const colliders = [];
+    const group = new THREE.Group();
+    scene.add(group);
+
+    // fog + lighting
+    scene.fog = new THREE.FogExp2(new THREE.Color(P.fog), 0.045);
+    scene.background = new THREE.Color(P.fog);
+
+    const hemi = new THREE.HemisphereLight(stage.lightWarm ? 0xffe3b0 : 0xbfd8ff, 0x151510, stage.culture === 'japan' ? 0.75 : 0.55);
+    group.add(hemi);
+    const sun = new THREE.DirectionalLight(stage.lightWarm ? 0xffd9a0 : 0xdfe9ff, stage.lightWarm ? 0.9 : 0.7);
+    sun.position.set(room.w * 0.3, room.h * 1.4, -room.d * 0.2);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.camera.left = -room.w; sun.shadow.camera.right = room.w;
+    sun.shadow.camera.top = room.d; sun.shadow.camera.bottom = -room.d;
+    sun.shadow.camera.far = room.h * 4;
+    group.add(sun);
+
+    // floor
+    const floorTex = U.textureFromCanvas(U.floorTexture(P.floor, P.vein, 6), room.w / 4, room.d / 4);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(room.w, room.d),
+      new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.95 }));
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    group.add(floor);
+
+    // ceiling — a lit "sky" tone for Japan gardens, dark stone for Egyptian halls
+    const ceilColor = stage.culture === 'japan'
+      ? new THREE.Color(P.fog).lerp(new THREE.Color('#cfe0d8'), 0.55)
+      : new THREE.Color(P.wall).multiplyScalar(0.5);
+    const ceil = new THREE.Mesh(new THREE.PlaneGeometry(room.w, room.d),
+      new THREE.MeshStandardMaterial({ color: ceilColor, roughness: 1, emissive: stage.culture === 'japan' ? ceilColor : 0x000000, emissiveIntensity: stage.culture === 'japan' ? 0.25 : 0 }));
+    ceil.rotation.x = Math.PI / 2; ceil.position.y = room.h;
+    group.add(ceil);
+
+    // walls
+    const wallTex = U.textureFromCanvas(U.wallTexture(P.wall, P.vein, stage.id * 17), 4, 1.6);
+    const wallMat = new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.92 });
+    function wall(w, h, x, y, z, ry) {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), wallMat);
+      m.position.set(x, y, z); m.rotation.y = ry;
+      m.receiveShadow = true; m.castShadow = false;
+      group.add(m);
+      return m;
+    }
+    wall(room.d, room.h, -room.w / 2, room.h / 2, 0, Math.PI / 2);
+    wall(room.d, room.h, room.w / 2, room.h / 2, 0, -Math.PI / 2);
+    // south wall (spawn side, solid)
+    wall(room.w, room.h, 0, room.h / 2, room.d / 2, Math.PI);
+    colliders.push(U.boxFrom(-room.w / 2 - 0.1, 0, 0.3, room.d + 1, 0, room.h));
+    colliders.push(U.boxFrom(room.w / 2 + 0.1, 0, 0.3, room.d + 1, 0, room.h));
+    colliders.push(U.boxFrom(0, room.d / 2 + 0.1, room.w + 1, 0.3, 0, room.h));
+
+    // north wall with door cutout
+    const doorW = 2.6, doorH = 4.2;
+    const sideW = (room.w - doorW) / 2;
+    wall(sideW, room.h, -room.w / 2 + sideW / 2, room.h / 2, -room.d / 2, 0);
+    wall(sideW, room.h, room.w / 2 - sideW / 2, room.h / 2, -room.d / 2, 0);
+    wall(room.w, room.h - doorH, 0, doorH + (room.h - doorH) / 2, -room.d / 2, 0);
+    colliders.push(U.boxFrom(-room.w / 2 + sideW / 2, -room.d / 2 - 0.1, sideW, 0.3, 0, room.h));
+    colliders.push(U.boxFrom(room.w / 2 - sideW / 2, -room.d / 2 - 0.1, sideW, 0.3, 0, room.h));
+
+    // door itself (two leaves)
+    const doorAccent = P.accent;
+    const doorMat = new THREE.MeshStandardMaterial({ color: doorAccent, roughness: 0.4, metalness: 0.4, emissive: doorAccent, emissiveIntensity: 0.08 });
+    const leafGeo = new THREE.BoxGeometry(doorW / 2 - 0.03, doorH, 0.14);
+    const leafL = new THREE.Mesh(leafGeo, doorMat);
+    const leafR = new THREE.Mesh(leafGeo, doorMat);
+    leafL.position.set(-doorW / 4, doorH / 2, -room.d / 2 - 0.02);
+    leafR.position.set(doorW / 4, doorH / 2, -room.d / 2 - 0.02);
+    leafL.castShadow = leafR.castShadow = true;
+    group.add(leafL, leafR);
+    const doorCollider = U.boxFrom(0, -room.d / 2 - 0.1, doorW, 0.35, 0, doorH);
+    colliders.push(doorCollider);
+
+    let doorOpened = false;
+    function openDoor() {
+      if (doorOpened) return; doorOpened = true;
+      const dur = 1400, t0 = performance.now();
+      colliders.splice(colliders.indexOf(doorCollider), 1);
+      (function anim() {
+        const t = Math.min(1, (performance.now() - t0) / dur);
+        const e = 1 - Math.pow(1 - t, 3);
+        leafL.position.x = -doorW / 4 - e * (doorW / 2 - 0.05);
+        leafR.position.x = doorW / 4 + e * (doorW / 2 - 0.05);
+        if (t < 1) requestAnimationFrame(anim);
+      })();
+    }
+
+    // decorations along both side walls
+    const decorList = stage.decor;
+    const spacing = 3.2;
+    const rows = Math.max(2, Math.floor(room.d / spacing) - 1);
+    for (let i = 0; i < rows; i++) {
+      const z = room.d / 2 - spacing * 0.9 - i * spacing;
+      [-1, 1].forEach(side => {
+        if (Math.random() < 0.18) return; // occasional gap
+        const key = U.pick(decorList);
+        const builder = BUILDERS[key];
+        if (!builder) return;
+        const x = side * (room.w / 2 - 1.15);
+        const res = builder(x, z, doorAccent, side > 0 ? Math.PI : 0);
+        if (res && res.group) {
+          group.add(res.group);
+          if (res.collider) colliders.push(res.collider);
+        } else if (res instanceof THREE.Group) {
+          group.add(res);
+        }
+      });
+    }
+    // a couple of hieroglyph wall plaques regardless of theme, for texture variety
+    if (stage.culture !== 'japan') {
+      group.add(hieroglyphWall(-room.w / 2 + 0.05, room.d / 2 - 3, Math.PI / 2, 2, room.h));
+      group.add(hieroglyphWall(room.w / 2 - 0.05, room.d / 2 - 7, -Math.PI / 2, 2, room.h));
+    }
+    scatterClutter(stage, room, group, colliders);
+    const sig = signatureCartouche(room.w / 2 - 0.06, room.d / 2 - 2.4, -Math.PI / 2, doorAccent);
+    group.add(sig.group);
+
+    // Every room carries the same signature: a floating Egyptian relic hovering on one
+    // side, a floating Japanese character on the other — the shared visual concept the
+    // dungeon repeats stage after stage, regardless of that stage's dominant culture.
+    const floaters = [];
+    const relicZ = room.d / 2 - room.d * 0.36 + (stage.id % 3 - 1) * 1.6;
+    const egyptRelic = floatingRelic(-(room.w / 2 - 1.35), relicZ, 'egypt', P.accent);
+    const japanRelic = floatingRelic(room.w / 2 - 1.35, relicZ - 2.2, 'japan', P.accent2 || P.accent);
+    [egyptRelic, japanRelic].forEach(r => {
+      group.add(r.group);
+      colliders.push(r.collider);
+      floaters.push(r.floater);
+    });
+
+    // The room's namesake figure — a stylized statue player must walk around
+    // near the entrance, with a lore plaque in front of it.
+    const statueZ = room.d / 2 - 5.5;
+    const statueRes = centralStatue(stage.figure, 0, statueZ, doorAccent);
+    group.add(statueRes.group);
+    colliders.push(statueRes.collider);
+    const plaqueZ = room.d / 2 - 3.6;
+    const plaqueRes = lorePlaque(0, plaqueZ, doorAccent);
+    group.add(plaqueRes.group);
+    colliders.push(plaqueRes.collider);
+    const loreTrigger = {
+      position: new THREE.Vector3(0, 1, plaqueZ), radius: 1.8,
+      prompt: `Press E to learn of ${stage.figure.name}`
+    };
+
+    const dust = makeDust(group, room, doorAccent);
+
+    return {
+      group, colliders, doorCollider, openDoor,
+      room, palette: P,
+      spawn: { x: 0, z: room.d / 2 - 1.6, ry: 0 },
+      doorCenter: { x: 0, z: -room.d / 2 },
+      dust, floaters, loreTrigger,
+      accent: doorAccent
+    };
+  }
+
+  return { buildStage, mat, GEO };
+})();
+
+</script>
+
+<script>
+// ==== puzzles.js ====
+// ============================================================================
+// puzzles.js — puzzle LOGIC + UI. Consumes stage.puzzle DATA (stages.js) and
+// world geometry (world.js). Each puzzle type is fully swappable/independent.
+// ============================================================================
+DG.Puzzles = (function () {
+  const U = DG.util;
+
+  // ---------- DOM refs for the modal (UI-panel puzzles) ----------
+  const modal = () => document.getElementById('puzzleModal');
+  const $ = id => document.getElementById(id);
+
+  function openModal(title, sub) {
+    $('pTitle').textContent = title;
+    $('pSub').textContent = sub || '';
+    $('puzzleBody').innerHTML = '';
+    $('pFeedback').textContent = '';
+    $('pSubmit').style.display = '';
+    $('pClose').onclick = closeModal;
+    modal().classList.add('show');
+    DG.game && DG.game.setModalOpen && DG.game.setModalOpen(true);
+  }
+  function closeModal() {
+    modal().classList.remove('show');
+    DG.game && DG.game.setModalOpen && DG.game.setModalOpen(false);
+  }
+  $('pClose') && ($('pClose').onclick = closeModal);
+
+  function feedback(msg, ok) {
+    const f = $('pFeedback');
+    f.textContent = msg;
+    f.style.color = ok ? '#8fe3ab' : '#e6c878';
+  }
+
+  // ---------- generic small helpers to build in-world glowing props ----------
+  function glowMesh(geo, color, intensity) {
+    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+      color, emissive: color, emissiveIntensity: intensity || 0.6, roughness: 0.35, metalness: 0.3
+    }));
+    return m;
+  }
+  function addInteractable(worldCtx, obj) { worldCtx.interactables.push(obj); }
+
+  function pedestal(worldCtx, x, z, accent, label) {
+    const g = new THREE.Group();
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.55, 0.9, 10), DG.World.mat('#7a6446'));
+    base.position.y = 0.45;
+    // a faceted relic gem, not a plain ball — reads as "something to examine"
+    const orb = glowMesh(new THREE.OctahedronGeometry(0.22, 0), accent, 0.9);
+    orb.position.y = 1.08;
+    orb.rotation.set(0.4, 0, 0.3);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.025, 8, 24),
+      new THREE.MeshStandardMaterial({ color: accent, emissive: accent, emissiveIntensity: 0.6, metalness: 0.5, roughness: 0.3 }));
+    ring.rotation.x = Math.PI / 2.3; ring.position.y = 1.08;
+    const light = new THREE.PointLight(accent, 1.1, 4, 2);
+    light.position.y = 1.05;
+    g.add(base, orb, ring, light);
+    g.position.set(x, 0, z);
+    worldCtx.group.add(g);
+    worldCtx.colliders.push(U.boxFrom(x, z, 0.9, 0.9, 0, 0.9));
+    const anim = { orb, ring, t: Math.random() * 10, spin: true };
+    worldCtx.pulseObjs = worldCtx.pulseObjs || [];
+    worldCtx.pulseObjs.push(anim);
+    return {
+      position: new THREE.Vector3(x, 1, z), radius: 2.6, prompt: label || 'Press E to examine',
+      mesh: g, onInteract: null // set by caller
+    };
+  }
+
+  // ============================================================
+  // GENERIC MULTIPLE-CHOICE RUNNER (used by several puzzle types)
+  // ============================================================
+  function runRounds(stage, rounds, opts, onDone) {
+    let idx = 0;
+    let selected = null;
+
+    function renderRound() {
+      const r = rounds[idx];
+      selected = null;
+      const promptTxt = r.prompt || opts.prompt || stage.puzzle.prompt;
+      openModal(opts.title || stage.puzzle.title, promptTxt);
+      const body = $('puzzleBody');
+
+      if (r.glyph) {
+        const img = document.createElement('img');
+        img.src = U.glyphTexture(r.glyph, '#e6c878', 'rgba(255,255,255,0.03)').toDataURL();
+        img.style.cssText = 'width:100px;height:100px;display:block;margin:0 auto 14px;filter:drop-shadow(0 0 10px rgba(230,200,120,.4));';
+        body.appendChild(img);
+      } else if (r.kana) {
+        const k = document.createElement('div');
+        k.textContent = r.kana;
+        k.style.cssText = "font-family:'Noto Serif JP',serif;font-size:64px;text-align:center;color:#e6c878;margin-bottom:14px;text-shadow:0 0 16px rgba(230,200,120,.4);";
+        body.appendChild(k);
+      } else if (r.phrase) {
+        const p = document.createElement('div');
+        p.textContent = '“' + r.phrase + '”';
+        p.className = 'serif';
+        p.style.cssText = 'font-size:22px;text-align:center;color:#e6c878;margin-bottom:14px;';
+        body.appendChild(p);
+      }
+
+      const grid = document.createElement('div');
+      grid.className = r.options.length > 3 ? 'grid2' : 'grid3';
+      r.options.forEach(opt => {
+        const c = document.createElement('div');
+        c.className = 'choiceCard';
+        c.textContent = opt;
+        if (/[\u0600-\u06FF]/.test(opt)) {
+          c.dir = 'auto';
+          c.style.fontFamily = "'Noto Naskh Arabic', 'Jost', sans-serif";
+          c.style.fontSize = '17px';
+        }
+        c.onclick = () => {
+          [...grid.children].forEach(ch => ch.classList.remove('selected'));
+          c.classList.add('selected');
+          selected = opt;
+          DG.audio && DG.audio.select();
+        };
+        grid.appendChild(c);
+      });
+      body.appendChild(grid);
+      feedback('', true);
+    }
+
+    renderRound();
+    $('pSubmit').onclick = () => {
+      const r = rounds[idx];
+      if (!selected) { feedback('Choose an answer first.', false); return; }
+      if (selected === r.answer) {
+        feedback('Correct.', true);
+        DG.audio && DG.audio.select();
+        DG.game && DG.game.addScore(1);
+        idx++;
+        if (idx >= rounds.length) {
+          setTimeout(() => { closeModal(); onDone(true); }, 500);
+        } else {
+          setTimeout(renderRound, 500);
+        }
+      } else {
+        feedback('Not quite — try again.', false);
+        DG.audio && DG.audio.wrong();
+        DG.game && DG.game.addScore(-1);
+      }
+    };
+  }
+
+  // ============================================================
+  // PUZZLE TYPE IMPLEMENTATIONS
+  // ============================================================
+  const TYPES = {};
+
+  // ---- 1. hieroglyph_decode / 6. translation_greeting / 11. cultural_riddle / (shared) ----
+  function simpleMCFactory(buildRounds) {
+    return function (stage, worldCtx, onSolved) {
+      const ped = pedestal(worldCtx, 0, -stage.room.d / 2 + 4.5, stage.palette.accent, 'Press E to read the glyph');
+      ped.onInteract = () => {
+        const rounds = buildRounds(stage);
+        runRounds(stage, rounds, { title: stage.puzzle.title }, () => onSolved());
+      };
+      addInteractable(worldCtx, ped);
+    };
+  }
+  TYPES.hieroglyph_decode = simpleMCFactory(stage => stage.puzzle.rounds);
+  TYPES.hiragana_match = simpleMCFactory(stage => stage.puzzle.rounds);
+  TYPES.translation_greeting = simpleMCFactory(stage => stage.puzzle.rounds);
+  TYPES.cultural_riddle = simpleMCFactory(stage => [{ prompt: stage.puzzle.prompt, options: stage.puzzle.options, answer: stage.puzzle.answer }]);
+  TYPES.mixed_logic = simpleMCFactory(stage => ([
+    { prompt: 'First lesson — name the meaning:', glyph: stage.puzzle.stepA.glyph, options: stage.puzzle.stepA.options, answer: stage.puzzle.stepA.answer },
+    { prompt: 'Second lesson — name the meaning:', kana: stage.puzzle.stepB.kana, options: stage.puzzle.stepB.options, answer: stage.puzzle.stepB.answer }
+  ]));
+
+  // ---- 3. lever_sequence (physical) ----
+  TYPES.lever_sequence = function (stage, worldCtx, onSolved) {
+    const labels = stage.puzzle.labels;
+    const positions = U.shuffle([0, 1, 2]);
+    const progress = [];
+    positions.forEach((semanticIdx, slot) => {
+      const x = (slot - 1) * 2.3;
+      const z = -stage.room.d / 2 + 5;
+      const g = new THREE.Group();
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.3, 0.18), DG.World.mat('#5c4a30'));
+      post.position.y = 0.65;
+      const handle = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.7, 0.14), DG.World.mat(stage.palette.accent, { emissive: stage.palette.accent, emissiveIntensity: 0.35 }));
+      handle.position.set(0, 1.25, 0); handle.geometry.translate(0, 0.35, 0);
+      handle.rotation.z = -0.9;
+      g.add(post, handle);
+      g.position.set(x, 0, z);
+      worldCtx.group.add(g);
+      worldCtx.colliders.push(U.boxFrom(x, z, 0.5, 0.5, 0, 1.3));
+
+      const item = {
+        position: new THREE.Vector3(x, 1, z), radius: 1.8, prompt: 'Press E to pull "' + labels[semanticIdx] + '"',
+        pulled: false,
+        onInteract: () => {
+          if (item.pulled) return;
+          item.pulled = true;
+          handle.rotation.z = 0.4;
+          DG.audio && DG.audio.leverClunk();
+          progress.push(semanticIdx);
+          const correct = stage.puzzle.order;
+          const ok = progress.every((v, i) => v === correct[i]);
+          if (!ok) {
+            DG.audio && DG.audio.wrong();
+            DG.game.toast('Not the right order…', 'The levers reset.');
+            DG.game.addScore(-1);
+            setTimeout(() => {
+              progress.length = 0;
+              worldCtx.interactables.forEach(it => { if (it.pulled !== undefined) { it.pulled = false; } });
+              worldCtx.leverHandles && worldCtx.leverHandles.forEach(h => h.rotation.z = -0.9);
+            }, 700);
+          } else if (progress.length === correct.length) {
+            DG.game.addScore(1);
+            onSolved();
+          }
+        }
+      };
+      worldCtx.leverHandles = worldCtx.leverHandles || [];
+      worldCtx.leverHandles.push(handle);
+      addInteractable(worldCtx, item);
+    });
+  };
+
+  // ---- 4. pressure_plates (physical, proximity trigger) ----
+  TYPES.pressure_plates = function (stage, worldCtx, onSolved) {
+    const n = 4;
+    const shuffledLabels = U.shuffle([0, 1, 2, 3]);
+    const progress = [];
+    const plates = [];
+    for (let i = 0; i < n; i++) {
+      const x = (i - (n - 1) / 2) * 2.1;
+      const z = -stage.room.d / 2 + 5;
+      const numTex = U.textureFromCanvas(U.labelTexture(String(shuffledLabels[i] + 1), null, 128, 128, { size: 60, fg: '#e6c878' }));
+      const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.08, 20),
+        new THREE.MeshStandardMaterial({ color: '#3a4a42', map: numTex, emissive: stage.palette.accent, emissiveIntensity: 0.12 }));
+      plate.position.set(x, 0.04, z);
+      worldCtx.group.add(plate);
+      plates.push({ mesh: plate, semantic: shuffledLabels[i], x, z, done: false });
+    }
+    worldCtx.updateFns = worldCtx.updateFns || [];
+    worldCtx.updateFns.push(playerPos => {
+      plates.forEach(p => {
+        if (p.done) return;
+        const dx = playerPos.x - p.x, dz = playerPos.z - p.z;
+        if (dx * dx + dz * dz < 0.5 * 0.5) {
+          p.done = true;
+          p.mesh.material.emissiveIntensity = 0.9;
+          DG.audio && DG.audio.plate();
+          progress.push(p.semantic);
+          const correct = stage.puzzle.order;
+          const ok = progress.every((v, i) => v === correct[i]);
+          if (!ok) {
+            DG.audio && DG.audio.wrong();
+            DG.game.toast('Ripples fade…', 'Try the stones again.');
+            DG.game.addScore(-1);
+            setTimeout(() => { progress.length = 0; plates.forEach(pp => { pp.done = false; pp.mesh.material.emissiveIntensity = 0.12; }); }, 800);
+          } else if (progress.length === correct.length) {
+            DG.game.addScore(1);
+            onSolved();
+          }
+        }
+      });
+    });
+  };
+
+  // ---- 5. symbol_rotation (UI dial panel) ----
+  TYPES.symbol_rotation = function (stage, worldCtx, onSolved) {
+    const ped = pedestal(worldCtx, 0, -stage.room.d / 2 + 4.5, stage.palette.accent, 'Press E to turn the seals');
+    ped.onInteract = () => {
+      const seals = stage.puzzle.seals.map(s => ({ glyph: s.glyph, target: s.targetSteps, cur: 0 }));
+      openModal(stage.puzzle.title, stage.puzzle.prompt);
+      const body = $('puzzleBody');
+      const wrap = document.createElement('div');
+      wrap.className = 'grid2';
+      seals.forEach((s, i) => {
+        const card = document.createElement('div');
+        card.style.cssText = 'text-align:center;';
+        const targetImg = document.createElement('img');
+        targetImg.src = U.glyphTexture(s.glyph, '#8fb8a6', null).toDataURL();
+        targetImg.style.cssText = `width:46px;height:46px;opacity:.55;margin-bottom:6px;transform:rotate(${s.target * 90}deg);`;
+        const targetLbl = document.createElement('div');
+        targetLbl.textContent = 'target';
+        targetLbl.style.cssText = 'font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#8fb8a6;opacity:.7;margin-bottom:4px;';
+        s.cur = Math.floor(Math.random() * 4); // start rotated away from the answer, not always at 0
+        const rotImg = document.createElement('img');
+        rotImg.src = U.glyphTexture(s.glyph, '#e6c878', 'rgba(255,255,255,0.04)').toDataURL();
+        rotImg.style.cssText = `width:86px;height:86px;cursor:pointer;transition:transform .25s ease;border-radius:50%;transform:rotate(${s.cur * 90}deg);`;
+        rotImg.onclick = () => {
+          s.cur = (s.cur + 1) % 4;
+          rotImg.style.transform = `rotate(${s.cur * 90}deg)`;
+          DG.audio && DG.audio.select();
+        };
+        const lbl = document.createElement('div');
+        lbl.textContent = 'Seal ' + (i + 1) + ' — rotate to match';
+        lbl.style.cssText = 'font-size:11px;letter-spacing:1px;color:#e9dcc0;opacity:.7;margin-top:6px;';
+        card.appendChild(targetLbl); card.appendChild(targetImg); card.appendChild(document.createElement('br')); card.appendChild(rotImg); card.appendChild(lbl);
+        wrap.appendChild(card);
+      });
+      body.appendChild(wrap);
+      $('pSubmit').onclick = () => {
+        const ok = seals.every(s => s.cur === s.target);
+        if (ok) { feedback('The seals align.', true); DG.audio && DG.audio.select(); DG.game.addScore(1); setTimeout(() => { closeModal(); onSolved(); }, 500); }
+        else { feedback('Not aligned yet.', false); DG.audio && DG.audio.wrong(); DG.game.addScore(-1); }
+      };
+    };
+    addInteractable(worldCtx, ped);
+  };
+
+  // ---- 7. memory_sequence & 15. symbol_activation_sequence (physical, watch & repeat) ----
+  function memoryFactory() {
+    return function (stage, worldCtx, onSolved) {
+      const glyphs = stage.puzzle.glyphs;
+      const length = stage.puzzle.length;
+      const seq = [];
+      for (let i = 0; i < length; i++) seq.push(Math.floor(Math.random() * glyphs.length));
+      const runes = [];
+      const spacing = Math.min(1.9, (stage.room.w - 2.5) / Math.max(1, glyphs.length - 1));
+      const z = -stage.room.d / 2 + stage.room.d * 0.4;
+      glyphs.forEach((g, i) => {
+        const x = (i - (glyphs.length - 1) / 2) * spacing;
+        const tex = U.textureFromCanvas(U.glyphTexture(g, '#1a140a', stage.palette.accent));
+        const disc = new THREE.Mesh(new THREE.CircleGeometry(0.42, 24),
+          new THREE.MeshStandardMaterial({ map: tex, emissive: stage.palette.accent, emissiveIntensity: 0.15 }));
+        disc.position.set(x, 1.5, z);
+        // CircleGeometry's default normal faces +Z, which is already toward the
+        // spawn side the player approaches from — no extra rotation needed.
+        worldCtx.group.add(disc);
+        const light = new THREE.PointLight(stage.palette.accent, 0, 2.4, 2);
+        light.position.copy(disc.position);
+        worldCtx.group.add(light);
+        runes.push({ mesh: disc, light, idx: i });
+        addInteractable(worldCtx, {
+          position: disc.position.clone(), radius: 1.6, prompt: 'Press E to activate',
+          onInteract: () => { if (active) handleClick(i); }
+        });
+      });
+
+      let active = false, playerIdx = 0, started = false;
+      function flash(i, dur) {
+        runes[i].light.intensity = 2.2;
+        runes[i].mesh.material.emissiveIntensity = 1;
+        setTimeout(() => { runes[i].light.intensity = 0; runes[i].mesh.material.emissiveIntensity = 0.15; }, dur || 420);
+      }
+      function playSequence() {
+        active = false;
+        DG.game.toast('Watch closely…', '');
+        seq.forEach((rIdx, step) => {
+          setTimeout(() => flash(rIdx, 500), step * 650 + 400);
+        });
+        setTimeout(() => { active = true; playerIdx = 0; DG.game.toast('Now repeat it', ''); }, seq.length * 650 + 700);
+      }
+      function handleClick(i) {
+        flash(i, 250);
+        if (seq[playerIdx] === i) {
+          DG.audio && DG.audio.select();
+          playerIdx++;
+          if (playerIdx >= seq.length) { DG.game.addScore(1); onSolved(); active = false; }
+        } else {
+          DG.audio && DG.audio.wrong();
+          DG.game.toast('That breaks the pattern…', 'Watch again.');
+          DG.game.addScore(-1);
+          active = false;
+          setTimeout(playSequence, 900); // auto-replays on failure — no need to press the lever again
+        }
+      }
+
+      // start lever — pressed once to begin; after that, failures auto-replay on their own
+      const leverX = (glyphs.length - 1) / 2 * spacing + 1.3;
+      const leverGroup = new THREE.Group();
+      const leverBase = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.9, 0.3), new THREE.MeshStandardMaterial({ color: '#2a2318', roughness: 0.7 }));
+      leverBase.position.y = 0.45;
+      const leverArm = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.7, 6),
+        new THREE.MeshStandardMaterial({ color: stage.palette.accent, emissive: stage.palette.accent, emissiveIntensity: 1.1 }));
+      leverArm.position.set(0, 0.9, 0); leverArm.rotation.z = 0.9;
+      const leverGlow = glowMesh(new THREE.SphereGeometry(0.1, 10, 8), stage.palette.accent, 1.2);
+      leverGlow.position.set(0.32, 1.2, 0);
+      leverGroup.add(leverBase, leverArm, leverGlow);
+      leverGroup.position.set(leverX, 0, z);
+      worldCtx.group.add(leverGroup);
+      addInteractable(worldCtx, {
+        position: leverGroup.position.clone(), radius: 1.7, prompt: 'Press E to begin',
+        onInteract: () => {
+          if (started) return;
+          started = true;
+          leverArm.rotation.z = -0.9;
+          leverGlow.material.emissiveIntensity = 0.15;
+          DG.audio && DG.audio.select();
+          playSequence();
+        }
+      });
+    };
+  }
+  TYPES.memory_sequence = memoryFactory();
+  TYPES.symbol_activation_sequence = memoryFactory();
+
+  // ---- 8. object_ordering (UI click-to-swap list) ----
+  TYPES.object_ordering = function (stage, worldCtx, onSolved) {
+    const ped = pedestal(worldCtx, 0, -stage.room.d / 2 + 4.5, stage.palette.accent, 'Press E to arrange the ritual');
+    ped.onInteract = () => {
+      let items = U.shuffle(stage.puzzle.items);
+      openModal(stage.puzzle.title, stage.puzzle.prompt);
+      const body = $('puzzleBody');
+      const hint = document.createElement('div');
+      hint.textContent = 'Use the arrows to move each relic up or down until the order feels right.';
+      hint.style.cssText = 'font-size:11px;letter-spacing:.03em;opacity:.55;text-align:center;margin-bottom:10px;';
+      body.appendChild(hint);
+      const list = document.createElement('div');
+      list.className = 'orderList';
+      function move(i, dir) {
+        const j = i + dir;
+        if (j < 0 || j >= items.length) return;
+        const tmp = items[i]; items[i] = items[j]; items[j] = tmp;
+        DG.audio && DG.audio.select();
+        render();
+      }
+      function render() {
+        list.innerHTML = '';
+        items.forEach((it, i) => {
+          const row = document.createElement('div');
+          row.className = 'orderItem';
+          row.innerHTML = `<span class="idx serif">${i + 1}</span><span style="flex:1">${it.label}</span>`;
+          const btns = document.createElement('div');
+          btns.style.cssText = 'display:flex;gap:6px;';
+          const up = document.createElement('button');
+          up.type = 'button'; up.textContent = '▲';
+          up.disabled = i === 0;
+          up.style.cssText = 'width:30px;height:30px;border-radius:50%;border:1px solid rgba(233,220,192,.3);background:rgba(255,255,255,.06);color:#e6c878;cursor:pointer;';
+          up.onclick = (ev) => { ev.stopPropagation(); move(i, -1); };
+          const down = document.createElement('button');
+          down.type = 'button'; down.textContent = '▼';
+          down.disabled = i === items.length - 1;
+          down.style.cssText = up.style.cssText;
+          down.onclick = (ev) => { ev.stopPropagation(); move(i, 1); };
+          btns.appendChild(up); btns.appendChild(down);
+          row.appendChild(btns);
+          list.appendChild(row);
+        });
+      }
+      render();
+      body.appendChild(list);
+      $('pSubmit').onclick = () => {
+        const ok = items.every((it, i) => it.id === stage.puzzle.correctOrder[i]);
+        if (ok) { feedback('The rite is correct.', true); DG.game.addScore(1); setTimeout(() => { closeModal(); onSolved(); }, 500); }
+        else { feedback('The order feels wrong.', false); DG.audio && DG.audio.wrong(); DG.game.addScore(-1); }
+      };
+    };
+    addInteractable(worldCtx, ped);
+  };
+
+  // ---- 9. pattern_match (lights-out style grid) ----
+  TYPES.pattern_match = function (stage, worldCtx, onSolved) {
+    const ped = pedestal(worldCtx, 0, -stage.room.d / 2 + 4.5, stage.palette.accent, 'Press E to align the lanterns');
+    ped.onInteract = () => {
+      const size = stage.puzzle.size;
+      const target = stage.puzzle.target;
+      let grid = target.map(() => 0);
+      openModal(stage.puzzle.title, stage.puzzle.prompt);
+      const body = $('puzzleBody');
+
+      const targetWrap = document.createElement('div');
+      targetWrap.style.cssText = `display:grid;grid-template-columns:repeat(${size},22px);gap:4px;justify-content:center;margin-bottom:14px;`;
+      target.forEach(v => {
+        const d = document.createElement('div');
+        d.style.cssText = `width:22px;height:22px;border-radius:4px;background:${v ? 'var(--gold-bright)' : 'rgba(233,220,192,0.12)'};`;
+        targetWrap.appendChild(d);
+      });
+      const label1 = document.createElement('div');
+      label1.textContent = 'TARGET PATTERN'; label1.style.cssText = 'text-align:center;font-size:10px;letter-spacing:2px;opacity:.5;margin-bottom:4px;';
+      body.appendChild(label1); body.appendChild(targetWrap);
+
+      const gridWrap = document.createElement('div');
+      gridWrap.style.cssText = `display:grid;grid-template-columns:repeat(${size},56px);gap:8px;justify-content:center;`;
+      const cells = [];
+      function toggle(i) {
+        const r = Math.floor(i / size), c = i % size;
+        [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dr, dc]) => {
+          const rr = r + dr, cc = c + dc;
+          if (rr >= 0 && rr < size && cc >= 0 && cc < size) grid[rr * size + cc] ^= 1;
+        });
+        redraw();
+        DG.audio && DG.audio.select();
+        if (grid.every((v, i2) => v === target[i2])) {
+          feedback('The mosaic is complete.', true);
+          DG.game.addScore(1);
+          setTimeout(() => { closeModal(); onSolved(); }, 600);
+        }
+      }
+      function redraw() { cells.forEach((c, i) => c.style.background = grid[i] ? 'var(--gold-bright)' : 'rgba(233,220,192,0.08)'); }
+      for (let i = 0; i < size * size; i++) {
+        const c = document.createElement('div');
+        c.style.cssText = 'width:56px;height:56px;border-radius:6px;cursor:pointer;border:1px solid rgba(233,220,192,0.25);transition:background .15s ease;';
+        c.onclick = () => toggle(i);
+        cells.push(c); gridWrap.appendChild(c);
+      }
+      redraw();
+      body.appendChild(gridWrap);
+      $('pSubmit').style.display = 'none';
+      $('pClose').onclick = () => { closeModal(); $('pSubmit').style.display = ''; };
+    };
+    addInteractable(worldCtx, ped);
+  };
+
+  // ---- 10. hidden_object_search (physical, find & interact) ----
+  TYPES.hidden_object_search = function (stage, worldCtx, onSolved) {
+    const margin = 2;
+    const x = U.rand(-stage.room.w / 2 + margin, stage.room.w / 2 - margin);
+    const z = U.rand(-stage.room.d / 2 + margin, stage.room.d / 2 - margin - 3);
+    // a small ushabti-style guardian figurine — tapered mummiform body + head —
+    // instead of a featureless glowing box
+    const fig = new THREE.Group();
+    const body = glowMesh(new THREE.CylinderGeometry(0.09, 0.16, 0.42, 10), stage.palette.accent, 0.5);
+    body.position.y = 0.24;
+    const head = glowMesh(new THREE.SphereGeometry(0.09, 10, 8), stage.palette.accent, 0.5);
+    head.position.y = 0.48;
+    const armsBar = glowMesh(new THREE.BoxGeometry(0.16, 0.03, 0.03), stage.palette.accent, 0.5);
+    armsBar.position.y = 0.36; armsBar.rotation.z = 0.05;
+    fig.add(body, head, armsBar);
+    fig.position.set(x, 0.25, z);
+    const light = new THREE.PointLight(stage.palette.accent, 0.8, 2.5, 2);
+    light.position.set(x, 0.4, z);
+    worldCtx.group.add(fig, light);
+    worldCtx.pulseObjs = worldCtx.pulseObjs || [];
+    worldCtx.pulseObjs.push({ orb: fig, t: 0, isFig: true, spin: true });
+    addInteractable(worldCtx, {
+      position: new THREE.Vector3(x, 0.4, z), radius: 1.4, prompt: 'Press E — a small figure glows here',
+      onInteract: () => { DG.game.addScore(1); onSolved(); }
+    });
+  };
+
+  // ---- 12. door_clue_search (physical tablets + UI code entry) ----
+  TYPES.door_clue_search = function (stage, worldCtx, onSolved) {
+    const digits = stage.puzzle.digits;
+    const found = [null, null, null];
+    const roman = ['I', 'II', 'III'];
+    for (let i = 0; i < 3; i++) {
+      const x = U.rand(-stage.room.w / 2 + 2, stage.room.w / 2 - 2);
+      const z = U.rand(-stage.room.d / 2 + 4, stage.room.d / 2 - 4);
+      const tex = U.textureFromCanvas(U.labelTexture(String(digits[i]), 'Position ' + roman[i], 200, 200, { size: 70, fg: '#e6c878', subSize: 20 }));
+      const tablet = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.75, 0.1),
+        new THREE.MeshStandardMaterial({ color: '#7a6446', map: tex, emissive: stage.palette.accent, emissiveIntensity: 0.15 }));
+      tablet.position.set(x, 1.2, z);
+      tablet.rotation.y = Math.random() * Math.PI;
+      worldCtx.group.add(tablet);
+      addInteractable(worldCtx, {
+        position: tablet.position.clone(), radius: 1.6, prompt: 'Press E to read the tablet',
+        onInteract: () => {
+          found[i] = digits[i];
+          DG.audio && DG.audio.select();
+          DG.game.toast('Tablet ' + roman[i] + ' reveals: ' + digits[i], '');
+          tablet.material.emissiveIntensity = 0.5;
+        }
+      });
+    }
+    const ped = pedestal(worldCtx, 0, -stage.room.d / 2 + 4.5, stage.palette.accent, 'Press E to enter the code');
+    ped.onInteract = () => {
+      openModal(stage.puzzle.title, 'Enter the digits you found, in order I, II, III.');
+      const body = $('puzzleBody');
+      const wrap = document.createElement('div');
+      wrap.className = 'grid3';
+      const selects = [];
+      for (let i = 0; i < 3; i++) {
+        const sel = document.createElement('select');
+        sel.style.cssText = 'width:100%;padding:10px;background:rgba(233,220,192,0.08);color:#f2e9d3;border:1px solid rgba(233,220,192,0.25);border-radius:6px;font-size:16px;text-align:center;';
+        sel.innerHTML = '<option value="">?</option>' + [...Array(10).keys()].map(n => `<option value="${n}">${n}</option>`).join('');
+        selects.push(sel);
+        const col = document.createElement('div');
+        col.style.textAlign = 'center';
+        const lbl = document.createElement('div');
+        lbl.textContent = 'Position ' + roman[i] + (found[i] === null ? ' (not read)' : '');
+        lbl.style.cssText = 'font-size:10px;letter-spacing:1px;opacity:.6;margin-bottom:6px;';
+        col.appendChild(lbl); col.appendChild(sel);
+        wrap.appendChild(col);
+      }
+      body.appendChild(wrap);
+      $('pSubmit').onclick = () => {
+        const vals = selects.map(s => s.value === '' ? null : parseInt(s.value, 10));
+        const ok = vals.every((v, i) => v === digits[i]);
+        if (ok) { feedback('The seal releases.', true); DG.game.addScore(1); setTimeout(() => { closeModal(); onSolved(); }, 500); }
+        else { feedback('The lock resists.', false); DG.audio && DG.audio.wrong(); DG.game.addScore(-1); }
+      };
+    };
+    addInteractable(worldCtx, ped);
+  };
+
+  // ---- 13. light_reflection — real reflection simulation, not a hidden target.
+  // Each mirror is a diagonal panel with exactly two states ("/" or "\"), like a
+  // classic laser-grid puzzle. The beam is recomputed and REDRAWN every time a
+  // mirror is toggled, so the player always sees exactly where the light is
+  // currently going and can adjust — nothing is ever hidden or guessed.
+  TYPES.light_reflection = function (stage, worldCtx, onSolved) {
+    const w2 = stage.room.w / 2, d2 = stage.room.d / 2;
+    const Ez = d2 - 4;
+    const D1 = stage.room.d * 0.3;
+    const accent = stage.palette.accent;
+
+    const emitterPos = new THREE.Vector3(-w2 + 1, 1.5, Ez);
+    const mirror1Pos = new THREE.Vector3(0, 1.5, Ez);
+    const mirror2Pos = new THREE.Vector3(0, 1.5, Ez - D1);
+    const receiverPos = new THREE.Vector3(-w2 + 1, 1.5, Ez - D1);
+    // required states for a working East->South->West path (see docs for the
+    // reflection rule): mirror1 must send East into South, mirror2 must send
+    // South into West.
+    const SOLUTION = { m1: 'slash2', m2: 'slash1' }; // 'slash2' = "\", 'slash1' = "/"
+
+    const emitter = glowMesh(new THREE.SphereGeometry(0.2, 12, 10), accent, 1.2);
+    emitter.position.copy(emitterPos);
+    worldCtx.group.add(emitter);
+    const receiver = glowMesh(new THREE.CircleGeometry(0.42, 20), '#8fe3ab', 0.35);
+    receiver.position.copy(receiverPos); receiver.rotation.y = Math.PI / 2;
+    worldCtx.group.add(receiver);
+    const receiverGlow = new THREE.PointLight('#8fe3ab', 0.4, 4, 2);
+    receiverGlow.position.copy(receiverPos);
+    worldCtx.group.add(receiverGlow);
+
+    function makeMirror(pos, startSlash) {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(1.15, 1.3, 0.06),
+        new THREE.MeshStandardMaterial({ color: '#dfe9e4', metalness: 0.75, roughness: 0.1, emissive: accent, emissiveIntensity: 0.1 }));
+      mesh.position.copy(pos);
+      const state = { slash: startSlash };
+      mesh.rotation.y = startSlash === 'slash1' ? Math.PI / 4 : -Math.PI / 4;
+      worldCtx.group.add(mesh);
+      return { mesh, state, pos };
+    }
+    // start both mirrors in a state that is NOT the solution, so there's an
+    // actual puzzle to solve, but never hidden — the player can see the beam
+    // dead-end and knows immediately which mirror to flip.
+    const m1 = makeMirror(mirror1Pos, SOLUTION.m1 === 'slash1' ? 'slash2' : 'slash1');
+    const m2 = makeMirror(mirror2Pos, SOLUTION.m2 === 'slash1' ? 'slash2' : 'slash1');
+
+    function toggle(m) {
+      m.state.slash = m.state.slash === 'slash1' ? 'slash2' : 'slash1';
+      m.mesh.rotation.y = m.state.slash === 'slash1' ? Math.PI / 4 : -Math.PI / 4;
+      DG.audio && DG.audio.select();
+      simulateBeam();
+    }
+    addInteractable(worldCtx, { position: mirror1Pos.clone(), radius: 1.8, prompt: 'Press E to turn the mirror', onInteract: () => toggle(m1) });
+    addInteractable(worldCtx, { position: mirror2Pos.clone(), radius: 1.8, prompt: 'Press E to turn the mirror', onInteract: () => toggle(m2) });
+
+    // reflect a cardinal direction {dx,dz} off a mirror's diagonal
+    function reflect(dx, dz, slash) {
+      return slash === 'slash1' ? { dx: dz, dz: dx } : { dx: -dz, dz: -dx };
+    }
+
+    const beamMat = new THREE.LineBasicMaterial({ color: accent, linewidth: 2 });
+    let beamLine = null;
+    const sparkGlow = glowMesh(new THREE.SphereGeometry(0.12, 10, 8), accent, 0.9);
+    sparkGlow.visible = false;
+    worldCtx.group.add(sparkGlow);
+
+    function simulateBeam() {
+      const points = [emitterPos.clone()];
+      let pos = emitterPos.clone();
+      let dir = { dx: 1, dz: 0 }; // fires East
+      const mirrors = [m1, m2];
+      let solved = false;
+      for (let bounce = 0; bounce < 6; bounce++) {
+        // does the ray (from pos, along dir) reach the receiver before any mirror?
+        const toReceiver = (dir.dx !== 0) ? (receiverPos.z === pos.z && Math.sign(receiverPos.x - pos.x) === Math.sign(dir.dx))
+                                           : (receiverPos.x === pos.x && Math.sign(receiverPos.z - pos.z) === Math.sign(dir.dz));
+        // find the nearest not-yet-hit mirror ahead along this ray
+        let hit = null, hitDist = Infinity;
+        mirrors.forEach(m => {
+          if (points.length > 1 && points[points.length - 1].equals(m.pos)) return; // don't re-hit the mirror we're leaving
+          const onAxis = (dir.dx !== 0) ? (m.pos.z === pos.z) : (m.pos.x === pos.x);
+          if (!onAxis) return;
+          const dist = (dir.dx !== 0) ? (m.pos.x - pos.x) * Math.sign(dir.dx) : (m.pos.z - pos.z) * Math.sign(dir.dz);
+          if (dist > 0.01 && dist < hitDist) { hitDist = dist; hit = m; }
+        });
+        const receiverDist = toReceiver ? ((dir.dx !== 0) ? (receiverPos.x - pos.x) * Math.sign(dir.dx) : (receiverPos.z - pos.z) * Math.sign(dir.dz)) : Infinity;
+
+        if (toReceiver && receiverDist < hitDist) {
+          points.push(receiverPos.clone());
+          solved = true;
+          break;
+        } else if (hit) {
+          points.push(hit.pos.clone());
+          const r = reflect(dir.dx, dir.dz, hit.state.slash);
+          dir = r; pos = hit.pos.clone();
+        } else {
+          // dead-ends at the nearest wall in the current direction
+          const endX = dir.dx > 0 ? stage.room.w / 2 - 0.3 : dir.dx < 0 ? -stage.room.w / 2 + 0.3 : pos.x;
+          const endZ = dir.dz > 0 ? stage.room.d / 2 - 0.3 : dir.dz < 0 ? -stage.room.d / 2 + 0.3 : pos.z;
+          points.push(new THREE.Vector3(endX, 1.5, endZ));
+          break;
+        }
+      }
+
+      if (beamLine) { worldCtx.group.remove(beamLine); beamLine = null; }
+      const geo = new THREE.BufferGeometry().setFromPoints(points);
+      beamLine = new THREE.Line(geo, beamMat);
+      worldCtx.group.add(beamLine);
+      sparkGlow.visible = !solved;
+      if (!solved) sparkGlow.position.copy(points[points.length - 1]);
+      receiver.material.emissiveIntensity = solved ? 1.6 : 0.35;
+      receiverGlow.intensity = solved ? 1.6 : 0.4;
+
+      if (solved) { DG.game.addScore(1); onSolved(); }
+    }
+    simulateBeam(); // show the initial (unsolved) beam immediately so there's something to react to
+  };
+
+  // ---- Lore info panel (not a puzzle — just a "Close" reading panel) ----
+  function openLore(figure) {
+    openModal(figure.name, figure.epithet);
+    const body = $('puzzleBody');
+    const p = document.createElement('div');
+    p.textContent = figure.blurb;
+    p.style.cssText = 'font-size:14px;line-height:1.7;color:#e9dcc0;text-align:left;';
+    body.appendChild(p);
+    $('pSubmit').style.display = 'none';
+    $('pClose').onclick = () => { closeModal(); $('pSubmit').style.display = ''; };
+  }
+
+  // ============================================================
+  // ENTRY POINT
+  // ============================================================
+  function begin(stage, worldCtx, onSolved) {
+    worldCtx.interactables = worldCtx.interactables || [];
+    const type = stage.puzzle.type;
+    const handler = TYPES[type];
+    if (!handler) { console.warn('Unknown puzzle type', type); onSolved(); return; }
+    handler(stage, worldCtx, onSolved);
+  }
+
+  return { begin, openLore };
+})();
+
+</script>
+
+<script>
+// ==== player.js ====
+// ============================================================================
+// player.js — first-person controller (desktop + mobile), collision, bobbing
+// ============================================================================
+DG.Player = class {
+  constructor(camera, domElement) {
+    this.camera = camera;
+    this.dom = domElement;
+    this.pos = new THREE.Vector3(0, 1.7, 0);
+    this.vel = new THREE.Vector3();
+    this.yaw = 0; this.pitch = 0;
+    this.height = 1.7;
+    this.radius = 0.32;
+    this.onGround = true;
+    this.speed = 3.6;
+    this.sprintMul = 1.7;
+    this.sensitivity = 1.0;
+    this.locked = false;
+    this.keys = {};
+    this.bobT = 0;
+    this.isMobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+    this.colliders = [];
+    this.interactables = [];
+    this.nearestInteract = null;
+    this.moveVec = { x: 0, y: 0 }; // from joystick
+    this.lookDelta = { x: 0, y: 0 };
+    this.sprintHeld = false;
+    this.jumpQueued = false;
+    this._bindDesktop();
+    if (this.isMobile) this._bindMobile();
+  }
+
+  _bindDesktop() {
+    window.addEventListener('keydown', e => {
+      this.keys[e.code] = true;
+      if (e.code === 'Space') this.jumpQueued = true;
+    });
+    window.addEventListener('keyup', e => { this.keys[e.code] = false; });
+
+    this.dom.addEventListener('click', () => {
+      if (!this.isMobile && !this.locked && !DG.game.modalOpen && !DG.game.paused) this.dom.requestPointerLock();
+    });
+    document.addEventListener('pointerlockchange', () => {
+      this.locked = document.pointerLockElement === this.dom;
+      // ignore the very first delta after (re)acquiring lock — browsers often report
+      // one large movementX/Y jump on the acquiring event, which used to snap the camera.
+      this._skipNextMove = this.locked;
+    });
+    document.addEventListener('mousemove', e => {
+      if (!this.locked) return;
+      // While a puzzle panel or pause menu is open, Pointer Lock keeps delivering
+      // movement deltas even though the cursor is hidden/frozen — integrating them
+      // in the background caused the camera to silently drift and "snap" once the
+      // panel closed. Ignore look input entirely while any overlay is open.
+      if (DG.game && (DG.game.modalOpen || DG.game.paused)) return;
+      if (this._skipNextMove) { this._skipNextMove = false; return; }
+      this.yaw -= e.movementX * 0.0022 * this.sensitivity;
+      this.pitch -= e.movementY * 0.0022 * this.sensitivity;
+      this.pitch = DG.util.clamp(this.pitch, -1.35, 1.35);
+    });
+  }
+
+  _bindMobile() {
+    document.getElementById('mobileControls').classList.add('active');
+    const joyZone = document.getElementById('joyZone');
+    const joyBase = document.getElementById('joyBase');
+    const joyStick = document.getElementById('joyStick');
+    let joyId = null, joyCenter = { x: 0, y: 0 };
+
+    function baseCenter() {
+      const r = joyBase.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }
+
+    joyZone.addEventListener('touchstart', e => {
+      const t = e.changedTouches[0];
+      joyId = t.identifier;
+      // The base stays put (fixed via CSS) — always visible so it's obvious where to
+      // put your thumb — we just drag the stick from its true center toward the touch.
+      joyCenter = baseCenter();
+      joyBase.classList.add('activeTouch');
+      e.preventDefault();
+    }, { passive: false });
+    joyZone.addEventListener('touchmove', e => {
+      for (const t of e.changedTouches) {
+        if (t.identifier !== joyId) continue;
+        let dx = t.clientX - joyCenter.x, dy = t.clientY - joyCenter.y;
+        const max = 40;
+        const len = Math.hypot(dx, dy);
+        if (len > max) { dx = dx / len * max; dy = dy / len * max; }
+        joyStick.style.transform = `translate(${dx}px,${dy}px)`;
+        this.moveVec.x = dx / max; this.moveVec.y = dy / max;
+      }
+      e.preventDefault();
+    }, { passive: false });
+    const self = this;
+    function endJoy(e) {
+      for (const t of e.changedTouches) {
+        if (t.identifier !== joyId) continue;
+        joyId = null; joyBase.classList.remove('activeTouch');
+        joyStick.style.transform = 'translate(0,0)';
+        self.moveVec.x = 0; self.moveVec.y = 0;
+      }
+    }
+    joyZone.addEventListener('touchend', endJoy);
+    joyZone.addEventListener('touchcancel', endJoy);
+
+    const lookZone = document.getElementById('lookZone');
+    let lookId = null, lastX = 0, lastY = 0;
+    lookZone.addEventListener('touchstart', e => {
+      const t = e.changedTouches[0];
+      lookId = t.identifier; lastX = t.clientX; lastY = t.clientY;
+      e.preventDefault();
+    }, { passive: false });
+    lookZone.addEventListener('touchmove', e => {
+      for (const t of e.changedTouches) {
+        if (t.identifier !== lookId) continue;
+        const dx = t.clientX - lastX, dy = t.clientY - lastY;
+        lastX = t.clientX; lastY = t.clientY;
+        this.yaw -= dx * 0.0032 * this.sensitivity;
+        this.pitch -= dy * 0.0032 * this.sensitivity;
+        this.pitch = DG.util.clamp(this.pitch, -1.35, 1.35);
+      }
+      e.preventDefault();
+    }, { passive: false });
+    lookZone.addEventListener('touchend', e => { for (const t of e.changedTouches) if (t.identifier === lookId) lookId = null; });
+
+    document.getElementById('btnJump').addEventListener('touchstart', e => { this.jumpQueued = true; e.preventDefault(); }, { passive: false });
+    const sprintBtn = document.getElementById('btnSprint');
+    sprintBtn.addEventListener('touchstart', e => { this.sprintHeld = true; sprintBtn.style.background = 'rgba(200,163,85,0.5)'; e.preventDefault(); }, { passive: false });
+    sprintBtn.addEventListener('touchend', e => { this.sprintHeld = false; sprintBtn.style.background = ''; }, { passive: false });
+    document.getElementById('btnInteract').addEventListener('touchstart', e => { DG.game.tryInteract(); e.preventDefault(); }, { passive: false });
+  }
+
+  setColliders(c) { this.colliders = c; }
+  setInteractables(list) { this.interactables = list; }
+
+  teleport(x, z, ry) {
+    this.pos.set(x, this.height, z);
+    this.vel.set(0, 0, 0);
+    this.yaw = ry || 0; this.pitch = 0;
+  }
+
+  _resolveCollisions(nx, nz) {
+    for (const box of this.colliders) {
+      if (DG.util.circleIntersectsBox(nx, nz, this.radius, box)) {
+        // push out along smaller axis penetration
+        const cx = DG.util.clamp(nx, box.minX, box.maxX);
+        const cz = DG.util.clamp(nz, box.minZ, box.maxZ);
+        let dx = nx - cx, dz = nz - cz;
+        let len = Math.hypot(dx, dz);
+        if (len < 0.0001) { dx = 1; dz = 0; len = 1; }
+        const push = this.radius - len;
+        if (push > 0) { nx += (dx / len) * push; nz += (dz / len) * push; }
+      }
+    }
+    return { x: nx, z: nz };
+  }
+
+  update(dt) {
+    // rotation from mobile drag already applied to yaw/pitch continuously; desktop via pointer events
+    let mx = 0, mz = 0;
+    if (this.isMobile) {
+      mx = this.moveVec.x; mz = this.moveVec.y;
+    } else {
+      if (this.keys['KeyW'] || this.keys['ArrowUp']) mz -= 1;
+      if (this.keys['KeyS'] || this.keys['ArrowDown']) mz += 1;
+      if (this.keys['KeyA'] || this.keys['ArrowLeft']) mx -= 1;
+      if (this.keys['KeyD'] || this.keys['ArrowRight']) mx += 1;
+    }
+    const sprinting = this.isMobile ? this.sprintHeld : this.keys['ShiftLeft'];
+    const len = Math.hypot(mx, mz);
+    let moving = false;
+    if (len > 0.02) {
+      moving = true;
+      mx /= (this.isMobile ? Math.max(len, 1) : len);
+      mz /= (this.isMobile ? Math.max(len, 1) : len);
+      const speed = this.speed * (sprinting ? this.sprintMul : 1) * Math.min(len, 1);
+      const cos = Math.cos(this.yaw), sin = Math.sin(this.yaw);
+      // World-space forward (matches camera facing at this.yaw) is (-sin, -cos);
+      // world-space right is (cos, -sin). mz is negative when moving forward, so:
+      const worldX = mx * cos + mz * sin;
+      const worldZ = -mx * sin + mz * cos;
+      const nx = this.pos.x + worldX * speed * dt;
+      const nz = this.pos.z + worldZ * speed * dt;
+      const resolved = this._resolveCollisions(nx, nz);
+      this.pos.x = resolved.x; this.pos.z = resolved.z;
+    }
+
+    // gravity / jump
+    const GRAV = 14;
+    if (this.jumpQueued && this.onGround) {
+      this.vel.y = 4.6;
+      this.onGround = false;
+      DG.audio && DG.audio.jump();
+    }
+    this.jumpQueued = false;
+    this.vel.y -= GRAV * dt;
+    this.pos.y += this.vel.y * dt;
+    if (this.pos.y <= this.height) {
+      this.pos.y = this.height; this.vel.y = 0; this.onGround = true;
+    }
+
+    // camera bob — swayed along the camera's own local "right" direction (not a
+    // fixed world axis) so it feels the same regardless of which way you're facing
+    if (moving && this.onGround) {
+      this.bobT += dt * (sprinting ? 11 : 7.4);
+    } else {
+      this.bobT += dt * 2; // settle
+    }
+    const bobY = moving && this.onGround ? Math.abs(Math.sin(this.bobT)) * 0.055 : Math.sin(this.bobT) * 0.006;
+    const bobSide = moving && this.onGround ? Math.cos(this.bobT * 0.5) * 0.03 : 0;
+    const rightX = Math.cos(this.yaw), rightZ = -Math.sin(this.yaw);
+
+    this.camera.position.set(this.pos.x + rightX * bobSide, this.pos.y + bobY, this.pos.z + rightZ * bobSide);
+    this.camera.rotation.order = 'YXZ';
+    this.camera.rotation.y = this.yaw;
+    this.camera.rotation.x = this.pitch;
+
+    // footstep sfx timing
+    if (moving && this.onGround) {
+      const phase = Math.sin(this.bobT);
+      if (!this._lastPhaseNeg && phase < -0.85) { DG.audio && DG.audio.footstep(); this._lastPhaseNeg = true; }
+      if (this._lastPhaseNeg && phase > 0.85) this._lastPhaseNeg = false;
+    }
+
+    // nearest interactable
+    let best = null, bestD = Infinity;
+    for (const it of this.interactables) {
+      const dx = it.position.x - this.pos.x, dz = it.position.z - this.pos.z;
+      const d = Math.hypot(dx, dz);
+      if (d < it.radius && d < bestD) { best = it; bestD = d; }
+    }
+    this.nearestInteract = best;
+
+    return moving;
+  }
+};
+
+</script>
+
+<script>
+// ==== game.js ====
+// ============================================================================
+// game.js — orchestration: renderer/scene/camera, save system, stage flow,
+// HUD & menu wiring, main loop.
+// ============================================================================
+(function () {
+  const U = DG.util;
+  const STAGES = DG.STAGES;
+  const N = DG.STAGE_COUNT;
+
+  // ---------------- Save / progression ----------------
+  const SAVE_KEY = 'langdungeon_save_v1';
+  function loadSave() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    // Every visitor now starts at the same stage (stage 1) rather than a
+    // randomized one — kept as `start` for minimal disruption to the rest of
+    // the progression system, which was built around an offset-based order.
+    const start = 0;
+    const s = { start, completed: 0 };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(s));
+    return s;
+  }
+  function writeSave(s) { localStorage.setItem(SAVE_KEY, JSON.stringify(s)); }
+
+  let save = loadSave();
+  function order() { return [...Array(N).keys()].map(i => (save.start + i) % N); }
+  function currentStageData() { return STAGES[order()[save.completed]]; }
+
+  // ---------------- three.js core ----------------
+  const canvas = document.getElementById('gameCanvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.05, 120);
+
+  function resize() {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const player = new DG.Player(camera, canvas);
+  const audio = new DG.Audio();
+  DG.audio = audio;
+
+  let worldCtx = null;
+  let particles = [];
+  let score = 0;
+
+  function updateScoreHUD() { document.getElementById('scoreVal').textContent = score; }
+  function popScore(delta) {
+    const el = document.getElementById('scorePop');
+    el.textContent = (delta > 0 ? '+' : '') + delta;
+    el.className = delta > 0 ? 'good' : 'bad';
+    void el.offsetWidth; // restart animation
+    el.classList.add('show');
+    clearTimeout(popScore._t);
+    popScore._t = setTimeout(() => el.classList.remove('show'), 900);
+  }
+
+  // ---------------- Game state / UI plumbing ----------------
+  const gameState = { modalOpen: false, paused: false, started: false, endReached: false };
+  DG.game = {
+    modalOpen: false, paused: false,
+    setModalOpen(v) {
+      gameState.modalOpen = v; this.modalOpen = v;
+      if (v) {
+        // Puzzle panels need a real, visible cursor to be clickable — Pointer Lock
+        // freezes the on-screen cursor position while still capturing raw deltas,
+        // which made panel buttons (and the ordering list) unreliable to click.
+        if (document.pointerLockElement) document.exitPointerLock();
+      } else {
+        DG.game.requestLock();
+      }
+    },
+    requestLock() {
+      if (player.isMobile || gameState.paused || gameState.modalOpen || gameState.endReached || !gameState.started) return;
+      setTimeout(() => {
+        if (!gameState.paused && !gameState.modalOpen && !gameState.endReached) canvas.requestPointerLock();
+      }, 30);
+    },
+    toast(main, sub) { showToast(main, sub); },
+    tryInteract() { attemptInteract(); },
+    addScore(delta) { score += delta; updateScoreHUD(); popScore(delta); }
+  };
+
+  function showToast(main, sub) {
+    const el = document.getElementById('toast');
+    el.innerHTML = main + (sub ? `<small>${sub}</small>` : '');
+    el.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => el.classList.remove('show'), 2200);
+  }
+
+  function updateHUD(stage) {
+    document.getElementById('stageNum').textContent = `STAGE ${save.completed + 1} / ${N}`;
+    document.getElementById('stageName').textContent = stage.title;
+    document.getElementById('progBar').style.width = (save.completed / N * 100) + '%';
+    document.getElementById('hintText').textContent = stage.puzzle.hint || '';
+  }
+
+  // ---------------- Stage lifecycle ----------------
+  function buildCurrentStage() {
+    const stage = currentStageData();
+    worldCtx = DG.World.buildStage(scene, stage);
+    worldCtx.interactables = [];
+    worldCtx.updateFns = [];
+    worldCtx.pulseObjs = [];
+    player.teleport(worldCtx.spawn.x, worldCtx.spawn.z, worldCtx.spawn.ry);
+    player.setColliders(worldCtx.colliders);
+    player.setInteractables(worldCtx.interactables);
+    if (worldCtx.loreTrigger) {
+      worldCtx.interactables.push(Object.assign({}, worldCtx.loreTrigger, {
+        onInteract: () => DG.Puzzles.openLore(stage.figure)
+      }));
+    }
+    // Ambient music bed muted per feedback (previous drone wasn't landing) — sound
+    // effects (footsteps, correct/wrong, door, success) still play normally.
+    // audio.setAmbient(stage.culture === 'japan' ? 'japan' : 'egypt');
+    updateHUD(stage);
+    document.getElementById('hintBox').classList.remove('show');
+
+    let solved = false;
+    DG.Puzzles.begin(stage, worldCtx, () => {
+      if (solved) return;
+      solved = true;
+      onStageSolved(stage);
+    });
+  }
+
+  function onStageSolved(stage) {
+    audio.success(stage.culture === 'japan' ? 'japan' : 'egypt');
+    audio.doorOpen();
+    showToast('Stage Complete', stage.title);
+    worldCtx.openDoor();
+    spawnCelebration(worldCtx.doorCenter.x, 1.6, worldCtx.doorCenter.z);
+    save.completed++;
+    writeSave(save);
+    document.getElementById('progBar').style.width = (save.completed / N * 100) + '%';
+    setTimeout(() => {
+      if (save.completed >= N) { reachEnd(); return; }
+      buildCurrentStage();
+    }, 2500);
+  }
+
+  function reachEnd() {
+    gameState.endReached = true;
+    document.getElementById('hud').classList.remove('active');
+    document.getElementById('endTraveler').textContent = 'Traveler: ' + (playerName || 'Wanderer');
+    document.getElementById('endScoreVal').textContent = score;
+    document.getElementById('endScreen').classList.add('show');
+    if (document.pointerLockElement) document.exitPointerLock();
+    audio.celebrate();
+  }
+
+  function spawnCelebration(x, y, z) {
+    const n = 60;
+    const geo = new THREE.BufferGeometry();
+    const pos = new Float32Array(n * 3);
+    const vel = [];
+    for (let i = 0; i < n; i++) {
+      pos[i * 3] = x; pos[i * 3 + 1] = y; pos[i * 3 + 2] = z;
+      const a = Math.random() * Math.PI * 2, sp = U.rand(0.8, 2.4);
+      vel.push([Math.cos(a) * sp, U.rand(1, 3), Math.sin(a) * sp]);
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const mat = new THREE.PointsMaterial({ color: '#e6c878', size: 0.07, transparent: true, opacity: 1 });
+    const pts = new THREE.Points(geo, mat);
+    scene.add(pts);
+    particles.push({ pts, vel, geo, life: 0, maxLife: 1.4 });
+  }
+
+  // ---------------- Interaction ----------------
+  function attemptInteract() {
+    if (gameState.modalOpen || gameState.paused) return;
+    const it = player.nearestInteract;
+    if (it && it.onInteract) it.onInteract();
+  }
+  window.addEventListener('keydown', e => {
+    if (e.code === 'KeyE') attemptInteract();
+    if (e.code === 'Escape') togglePause();
+  });
+
+  // ---------------- HUD buttons ----------------
+  const interactPromptEl = document.getElementById('interactPrompt');
+  document.getElementById('btnHint').onclick = () => {
+    const box = document.getElementById('hintBox');
+    box.classList.toggle('show');
+    clearTimeout(document.getElementById('hintBox')._t);
+    document.getElementById('hintBox')._t = setTimeout(() => box.classList.remove('show'), 6000);
+  };
+  let muted = false;
+  document.getElementById('btnSound').onclick = () => {
+    muted = !muted; audio.setMuted(muted);
+    document.getElementById('btnSound').style.opacity = muted ? 0.4 : 1;
+    document.getElementById('toggleSound').classList.toggle('on', !muted);
+  };
+  document.getElementById('toggleSound').onclick = () => document.getElementById('btnSound').onclick();
+  document.getElementById('btnPause').onclick = () => togglePause();
+
+  function togglePause() {
+    if (gameState.modalOpen || gameState.endReached || !gameState.started) return;
+    gameState.paused = !gameState.paused; DG.game.paused = gameState.paused;
+    document.getElementById('pauseMenu').classList.toggle('show', gameState.paused);
+    if (gameState.paused && document.pointerLockElement) document.exitPointerLock();
+    else if (!gameState.paused) DG.game.requestLock();
+  }
+  document.getElementById('btnResume').onclick = togglePause;
+  document.getElementById('btnRestartStage').onclick = () => { togglePause(); buildCurrentStage(); };
+  document.getElementById('btnRestartGame').onclick = () => {
+    localStorage.removeItem(SAVE_KEY);
+    save = loadSave();
+    score = 0; updateScoreHUD();
+    togglePause();
+    buildCurrentStage();
+  };
+  document.getElementById('sensSlider').oninput = e => { player.sensitivity = parseFloat(e.target.value); };
+
+  document.getElementById('btnPlayAgain').onclick = () => {
+    localStorage.removeItem(SAVE_KEY);
+    save = loadSave();
+    score = 0; updateScoreHUD();
+    gameState.endReached = false;
+    document.getElementById('endScreen').classList.remove('show');
+    document.getElementById('sendNote').textContent = '';
+    document.getElementById('hud').classList.add('active');
+    buildCurrentStage();
+  };
+
+  // ---------------- Send score ----------------
+  // NOTE: a static page can't silently email a server on its own — there's no
+  // backend here. This opens the player's own mail app with the score already
+  // written up, addressed to the recipient below. Replace the placeholder with
+  // a real address (or wire up a service like EmailJS/Formspree) to finish this.
+  const SCORE_RECIPIENT_EMAIL = 'PUT-YOUR-EMAIL-HERE@example.com';
+  document.getElementById('btnSendScore').onclick = () => {
+    const subject = encodeURIComponent('Language Dungeon — Score Report');
+    const body = encodeURIComponent(
+      `Traveler: ${playerName || 'Wanderer'}\nFinal Score: ${score}\nStages Completed: ${save.completed} / ${N}\n\nSent from Language Dungeon: Egypt × Japan.`
+    );
+    window.location.href = `mailto:${SCORE_RECIPIENT_EMAIL}?subject=${subject}&body=${body}`;
+    document.getElementById('sendNote').textContent = 'Opening your mail app with the score filled in — hit Send there to deliver it.';
+  };
+
+  // ---------------- Start flow ----------------
+  let playerName = '';
+  const nameInput = document.getElementById('playerNameInput');
+  const nameWarn = document.getElementById('nameWarn');
+  nameInput.addEventListener('input', () => nameWarn.classList.remove('show'));
+  nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('btnBegin').click(); });
+
+  const loadScreen = document.getElementById('loadScreen');
+  const loadBar = document.getElementById('loadBar');
+  const loadMsg = document.getElementById('loadMsg');
+  const msgs = ['Awakening the portal…', 'Blending sand and cedar…', 'Carving the first glyphs…', 'Lighting the lanterns…'];
+  let p = 0;
+  const loadIv = setInterval(() => {
+    p += U.rand(8, 20);
+    loadBar.style.width = Math.min(p, 100) + '%';
+    loadMsg.textContent = msgs[Math.min(msgs.length - 1, Math.floor(p / 26))];
+    if (p >= 100) {
+      clearInterval(loadIv);
+      setTimeout(() => {
+        loadScreen.classList.add('hidden');
+        const stage = currentStageData();
+        document.getElementById('startStageBadge').textContent = `Stage ${save.completed + 1} — ${stage.title}`;
+        document.getElementById('startScreen').classList.add('show');
+      }, 350);
+    }
+  }, 140);
+
+  document.getElementById('btnBegin').onclick = () => {
+    const val = nameInput.value.trim();
+    if (!val) { nameWarn.classList.add('show'); nameInput.focus(); return; }
+    playerName = val.slice(0, 30);
+    document.getElementById('startScreen').classList.remove('show');
+    document.getElementById('hud').classList.add('active');
+    gameState.started = true;
+    audio.ensure(); audio.resume();
+    buildCurrentStage();
+    if (!player.isMobile) canvas.requestPointerLock();
+  };
+
+  // ---------------- main loop ----------------
+  const clock = new THREE.Clock();
+  function animate() {
+    requestAnimationFrame(animate);
+    const dt = Math.min(clock.getDelta(), 0.05);
+
+    if (gameState.started && !gameState.paused && !gameState.modalOpen && !gameState.endReached) {
+      player.update(dt);
+      if (worldCtx) {
+        worldCtx.updateFns && worldCtx.updateFns.forEach(fn => fn(player.pos));
+        worldCtx.pulseObjs && worldCtx.pulseObjs.forEach(o => {
+          o.t += dt;
+          if (o.orb) {
+            const s = 1 + Math.sin(o.t * 2.4) * 0.18;
+            o.orb.scale.setScalar(s);
+            if (o.spin) o.orb.rotation.y += dt * 0.7;
+          }
+          if (o.ring) o.ring.rotation.z += dt * 0.5;
+        });
+        if (worldCtx.dust) {
+          const posAttr = worldCtx.dust.geo.attributes.position;
+          for (let i = 0; i < posAttr.count; i++) {
+            let y = posAttr.getY(i) + worldCtx.dust.speed * dt;
+            if (y > worldCtx.room.h - 0.3) y = 0.1;
+            posAttr.setY(i, y);
+          }
+          posAttr.needsUpdate = true;
+        }
+        if (worldCtx.floaters) {
+          worldCtx.floaters.forEach(f => {
+            f.t += dt;
+            if (f.ring) { f.ring.rotation.z += dt * 0.35; f.ring.rotation.y += dt * 0.12; }
+            if (f.disc) {
+              f.disc.rotation.y += dt * 0.5;
+              f.disc.position.y = f.baseY + Math.sin(f.t * 1.1) * 0.14;
+            }
+            if (f.motes) f.motes.rotation.y += dt * 0.25;
+          });
+        }
+      }
+      // interact prompt UI
+      if (player.nearestInteract) {
+        interactPromptEl.textContent = player.nearestInteract.prompt || 'Press E';
+        interactPromptEl.classList.add('show');
+      } else {
+        interactPromptEl.classList.remove('show');
+      }
+    }
+
+    // particles always animate (even during modal, for the celebration feel)
+    particles = particles.filter(p => {
+      p.life += dt;
+      const posAttr = p.geo.attributes.position;
+      for (let i = 0; i < posAttr.count; i++) {
+        posAttr.setX(i, posAttr.getX(i) + p.vel[i][0] * dt);
+        posAttr.setY(i, posAttr.getY(i) + p.vel[i][1] * dt - 2.2 * dt * p.life);
+        posAttr.setZ(i, posAttr.getZ(i) + p.vel[i][2] * dt);
+      }
+      posAttr.needsUpdate = true;
+      p.pts.material.opacity = Math.max(0, 1 - p.life / p.maxLife);
+      if (p.life >= p.maxLife) { scene.remove(p.pts); return false; }
+      return true;
+    });
+
+    renderer.render(scene, camera);
+  }
+  animate();
+})();
+
+</script>
+
+</body>
+</html>
