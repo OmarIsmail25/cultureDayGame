@@ -55,6 +55,7 @@ On mobile, use the on-screen joystick and buttons.
 **Presentation:** created together with a team, as part of E-JUST's cultural exchange days, connecting visiting international students with Egyptian culture and history through an interactive experience.
 
 A companion website was also created for this event but is not publicly hosted due to image licensing.
+
 ---
 
 *Feel free to explore the code, but please don't reuse it commercially without permission — this was built as a student project for a specific cultural event.*
